@@ -1,0 +1,4384 @@
+================================================================================
+COUP GAME - ANTIGRAVITY TASK BREAKDOWN
+COPY-PASTE PROMPTS FOR EACH DEVELOPMENT STEP
+================================================================================
+
+INSTRUCTIONS:
+1. Copy each prompt exactly as written
+2. Paste into Antigravity/Claude
+3. Wait for completion before moving to next task
+4. Keep all generated files - they'll be needed for subsequent tasks
+
+Total Tasks: 25
+Estimated Time: 6-8 hours (depending on debugging)
+
+================================================================================
+PHASE 1: PROJECT SETUP
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────
+TASK 1: Initialize Project Structure
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+I'm building an online multiplayer Coup card game (the social deduction game). 
+
+Create the initial project structure with the following:
+
+1. Root directory structure:
+```
+coup-game/
+├── client/          (React frontend)
+├── server/          (Node.js backend)
+├── package.json     (root workspace config)
+└── README.md
+```
+
+2. In the root `package.json`, set up:
+- npm workspaces for client and server
+- Script to run both concurrently
+- Dependencies: concurrently
+
+3. Create a basic README.md explaining:
+- What the project is (Coup online multiplayer game)
+- How to install (npm install)
+- How to run (npm run dev)
+
+4. Initialize git with .gitignore for:
+- node_modules/
+- .env
+- dist/
+- build/
+
+Don't install dependencies yet, just create the structure and config files.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 2: Set Up Backend Server
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Set up the Node.js backend server for the Coup game.
+
+1. Navigate to the `server/` directory and initialize:
+- Create package.json with:
+  * name: "coup-server"
+  * type: "module" (for ES6 imports)
+  * main: "server.js"
+  * scripts: "start": "node server.js", "dev": "nodemon server.js"
+
+2. Dependencies to add:
+- express
+- socket.io
+- uuid
+- cors
+- nodemon (dev dependency)
+
+3. Create the following directory structure:
+```
+server/
+├── server.js           (main entry point)
+├── models/
+│   ├── Game.js        (game state class)
+│   └── Player.js      (player class)
+├── managers/
+│   └── GameManager.js (manages multiple game rooms)
+├── utils/
+│   ├── constants.js   (card types, actions, etc.)
+│   └── helpers.js     (utility functions)
+└── package.json
+```
+
+4. In `server.js`, create a basic Express server with Socket.io:
+- Express app on port 3001
+- CORS enabled
+- Socket.io attached
+- Basic connection logging
+- Health check endpoint at GET /health
+
+5. In `utils/constants.js`, define:
+```javascript
+export const CARD_TYPES = {
+  DUKE: "Duke",
+  ASSASSIN: "Assassin",
+  CAPTAIN: "Captain",
+  AMBASSADOR: "Ambassador",
+  CONTESSA: "Contessa"
+};
+
+export const ACTIONS = {
+  INCOME: "INCOME",
+  FOREIGN_AID: "FOREIGN_AID",
+  COUP: "COUP",
+  TAX: "TAX",
+  ASSASSINATE: "ASSASSINATE",
+  STEAL: "STEAL",
+  EXCHANGE: "EXCHANGE"
+};
+
+export const GAME_STATES = {
+  LOBBY: "LOBBY",
+  ACTIVE_TURN: "ACTIVE_TURN",
+  WAITING_CHALLENGE: "WAITING_CHALLENGE",
+  RESOLVING_CHALLENGE: "RESOLVING_CHALLENGE",
+  WAITING_BLOCK: "WAITING_BLOCK",
+  RESOLVING_BLOCK: "RESOLVING_BLOCK",
+  WAITING_BLOCK_CHALLENGE: "WAITING_BLOCK_CHALLENGE",
+  RESOLVING_ACTION: "RESOLVING_ACTION",
+  CHOOSING_INFLUENCE: "CHOOSING_INFLUENCE",
+  GAME_OVER: "GAME_OVER"
+};
+```
+
+Don't implement game logic yet, just the basic server setup.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 3: Set Up Frontend Client
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Set up the React frontend for the Coup game using Vite.
+
+1. Navigate to `client/` directory and create a Vite React app:
+- Use: npm create vite@latest . -- --template react
+- Name: "coup-client"
+
+2. Add dependencies:
+- socket.io-client
+- zustand (state management)
+- react-router-dom
+
+3. Create the following directory structure:
+```
+client/
+├── src/
+│   ├── components/
+│   │   ├── Lobby/
+│   │   │   ├── CreateRoom.jsx
+│   │   │   └── JoinRoom.jsx
+│   │   ├── Game/
+│   │   │   ├── GameBoard.jsx
+│   │   │   ├── PlayerList.jsx
+│   │   │   ├── PlayerHand.jsx
+│   │   │   ├── ActionButtons.jsx
+│   │   │   ├── ChallengePanel.jsx
+│   │   │   └── GameLog.jsx
+│   │   └── Common/
+│   │       ├── Button.jsx
+│   │       └── Card.jsx
+│   ├── hooks/
+│   │   └── useSocket.js
+│   ├── store/
+│   │   └── gameStore.js
+│   ├── styles/
+│   │   ├── global.css
+│   │   ├── lobby.css
+│   │   └── game.css
+│   ├── utils/
+│   │   └── constants.js
+│   ├── App.jsx
+│   └── main.jsx
+└── package.json
+```
+
+4. In `src/utils/constants.js`, create the same constants as server:
+```javascript
+export const CARD_TYPES = { /* same as server */ };
+export const ACTIONS = { /* same as server */ };
+export const GAME_STATES = { /* same as server */ };
+```
+
+5. In `src/App.jsx`, set up basic routing:
+- Route "/" → Landing page with Create/Join room options
+- Route "/game/:roomCode" → Game board
+
+6. In `src/hooks/useSocket.js`, create a hook to connect to Socket.io:
+```javascript
+import { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
+
+export const useSocket = () => {
+  const [socket, setSocket] = useState(null);
+  
+  useEffect(() => {
+    const newSocket = io('http://localhost:3001');
+    setSocket(newSocket);
+    
+    return () => newSocket.close();
+  }, []);
+  
+  return socket;
+};
+```
+
+7. Update `vite.config.js` to proxy to backend:
+```javascript
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+    proxy: {
+      '/socket.io': {
+        target: 'http://localhost:3001',
+        ws: true
+      }
+    }
+  }
+});
+```
+
+Don't implement components yet, just the structure.
+═══════════════════════════════════════════════════════════════════════════
+
+================================================================================
+PHASE 2: CORE BACKEND LOGIC
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────
+TASK 4: Create Player and Game State Models
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create the Player and Game state models for the Coup game.
+
+Context: In Coup, each player has coins, 2 hidden character cards, and influence points. The game tracks turn order, deck, and current game state.
+
+1. Create `server/models/Player.js`:
+```javascript
+export class Player {
+  constructor(id, name, socketId) {
+    this.id = id;           // unique player ID (uuid)
+    this.name = name;       // player display name
+    this.socketId = socketId; // socket connection ID
+    this.coins = 2;         // starts with 2 coins
+    this.cards = [];        // array of { type: string, revealed: boolean }
+    this.influence = 2;     // starts with 2 influence (1 per card)
+    this.isAlive = true;    // false when influence reaches 0
+    this.isReady = false;   // for lobby
+    this.isConnected = true;
+  }
+
+  // Add a card to the player's hand
+  addCard(cardType) {
+    this.cards.push({ type: cardType, revealed: false });
+  }
+
+  // Reveal a card (when losing influence)
+  revealCard(cardIndex) {
+    if (this.cards[cardIndex] && !this.cards[cardIndex].revealed) {
+      this.cards[cardIndex].revealed = true;
+      this.influence--;
+      if (this.influence === 0) {
+        this.isAlive = false;
+      }
+      return this.cards[cardIndex].type;
+    }
+    return null;
+  }
+
+  // Check if player has a specific unrevealed card
+  hasCard(cardType) {
+    return this.cards.some(card => 
+      card.type === cardType && !card.revealed
+    );
+  }
+
+  // Get safe player data (hides unrevealed cards from other players)
+  getSafeData(isOwner = false) {
+    return {
+      id: this.id,
+      name: this.name,
+      coins: this.coins,
+      influence: this.influence,
+      isAlive: this.isAlive,
+      isConnected: this.isConnected,
+      cards: isOwner ? this.cards : this.cards.map(card => ({
+        type: card.revealed ? card.type : 'hidden',
+        revealed: card.revealed
+      }))
+    };
+  }
+}
+```
+
+2. Create `server/models/Game.js`:
+```javascript
+import { v4 as uuidv4 } from 'uuid';
+import { CARD_TYPES, GAME_STATES } from '../utils/constants.js';
+import { Player } from './Player.js';
+
+export class Game {
+  constructor(roomCode) {
+    this.gameId = uuidv4();
+    this.roomCode = roomCode;
+    this.status = 'LOBBY';
+    this.players = [];
+    this.currentPlayerIndex = 0;
+    this.deck = [];
+    this.discardPile = [];
+    this.gameState = GAME_STATES.LOBBY;
+    this.actionInProgress = null;
+    this.actionHistory = [];
+    this.winner = null;
+    this.createdAt = Date.now();
+    this.hostId = null;
+  }
+
+  // Initialize deck with 3 of each character (15 cards total)
+  initializeDeck() {
+    this.deck = [];
+    Object.values(CARD_TYPES).forEach(cardType => {
+      for (let i = 0; i < 3; i++) {
+        this.deck.push(cardType);
+      }
+    });
+    this.shuffleDeck();
+  }
+
+  // Shuffle the deck
+  shuffleDeck() {
+    for (let i = this.deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+    }
+  }
+
+  // Draw a card from the deck
+  drawCard() {
+    if (this.deck.length === 0) {
+      // Reshuffle discard pile into deck if empty
+      this.deck = [...this.discardPile];
+      this.discardPile = [];
+      this.shuffleDeck();
+    }
+    return this.deck.pop();
+  }
+
+  // Add a player to the game
+  addPlayer(playerId, playerName, socketId) {
+    const player = new Player(playerId, playerName, socketId);
+    this.players.push(player);
+    
+    // First player is the host
+    if (this.players.length === 1) {
+      this.hostId = playerId;
+    }
+    
+    return player;
+  }
+
+  // Remove a player
+  removePlayer(playerId) {
+    this.players = this.players.filter(p => p.id !== playerId);
+    
+    // Assign new host if host left
+    if (this.hostId === playerId && this.players.length > 0) {
+      this.hostId = this.players[0].id;
+    }
+  }
+
+  // Start the game (deal cards)
+  startGame() {
+    if (this.players.length < 2 || this.players.length > 6) {
+      throw new Error('Game requires 2-6 players');
+    }
+
+    this.initializeDeck();
+    
+    // Deal 2 cards to each player
+    this.players.forEach(player => {
+      player.addCard(this.drawCard());
+      player.addCard(this.drawCard());
+      player.coins = 2;
+      player.influence = 2;
+      player.isAlive = true;
+    });
+
+    this.status = 'ACTIVE';
+    this.gameState = GAME_STATES.ACTIVE_TURN;
+    this.currentPlayerIndex = 0;
+  }
+
+  // Get current player
+  getCurrentPlayer() {
+    return this.players[this.currentPlayerIndex];
+  }
+
+  // Move to next player's turn
+  nextTurn() {
+    do {
+      this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
+    } while (!this.getCurrentPlayer().isAlive);
+    
+    this.gameState = GAME_STATES.ACTIVE_TURN;
+    this.actionInProgress = null;
+  }
+
+  // Check if game is over
+  checkWinCondition() {
+    const alivePlayers = this.players.filter(p => p.isAlive);
+    if (alivePlayers.length === 1) {
+      this.winner = alivePlayers[0].id;
+      this.gameState = GAME_STATES.GAME_OVER;
+      this.status = 'FINISHED';
+      return true;
+    }
+    return false;
+  }
+
+  // Get game state for a specific player (hides other players' cards)
+  getGameStateForPlayer(playerId) {
+    return {
+      gameId: this.gameId,
+      roomCode: this.roomCode,
+      status: this.status,
+      gameState: this.gameState,
+      currentPlayerIndex: this.currentPlayerIndex,
+      currentPlayerId: this.getCurrentPlayer()?.id,
+      players: this.players.map(p => 
+        p.getSafeData(p.id === playerId)
+      ),
+      actionInProgress: this.actionInProgress,
+      actionHistory: this.actionHistory.slice(-10), // Last 10 actions
+      winner: this.winner,
+      hostId: this.hostId
+    };
+  }
+}
+```
+
+These models provide the foundation for game state management.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 5: Create Game Manager
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create a GameManager to handle multiple game rooms.
+
+Context: Multiple games can run simultaneously, each with a unique room code. The GameManager tracks all active games and provides methods to create, join, and manage games.
+
+Create `server/managers/GameManager.js`:
+
+```javascript
+import { v4 as uuidv4 } from 'uuid';
+import { Game } from '../models/Game.js';
+
+export class GameManager {
+  constructor() {
+    this.games = new Map(); // gameId -> Game
+    this.roomCodes = new Map(); // roomCode -> gameId
+  }
+
+  // Generate a unique 4-character room code
+  generateRoomCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let code;
+    do {
+      code = '';
+      for (let i = 0; i < 4; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+    } while (this.roomCodes.has(code));
+    return code;
+  }
+
+  // Create a new game
+  createGame() {
+    const roomCode = this.generateRoomCode();
+    const game = new Game(roomCode);
+    
+    this.games.set(game.gameId, game);
+    this.roomCodes.set(roomCode, game.gameId);
+    
+    return game;
+  }
+
+  // Get game by gameId
+  getGame(gameId) {
+    return this.games.get(gameId);
+  }
+
+  // Get game by room code
+  getGameByRoomCode(roomCode) {
+    const gameId = this.roomCodes.get(roomCode);
+    return gameId ? this.games.get(gameId) : null;
+  }
+
+  // Add player to a game
+  addPlayerToGame(gameId, playerId, playerName, socketId) {
+    const game = this.games.get(gameId);
+    if (!game) throw new Error('Game not found');
+    if (game.status !== 'LOBBY') throw new Error('Game already started');
+    if (game.players.length >= 6) throw new Error('Game is full');
+    
+    return game.addPlayer(playerId, playerName, socketId);
+  }
+
+  // Remove player from game
+  removePlayerFromGame(gameId, playerId) {
+    const game = this.games.get(gameId);
+    if (!game) return;
+    
+    game.removePlayer(playerId);
+    
+    // Delete game if empty
+    if (game.players.length === 0) {
+      this.roomCodes.delete(game.roomCode);
+      this.games.delete(gameId);
+    }
+  }
+
+  // Start a game
+  startGame(gameId) {
+    const game = this.games.get(gameId);
+    if (!game) throw new Error('Game not found');
+    
+    game.startGame();
+    return game;
+  }
+
+  // Clean up old games (optional, for future use)
+  cleanupOldGames(maxAge = 24 * 60 * 60 * 1000) { // 24 hours
+    const now = Date.now();
+    for (const [gameId, game] of this.games.entries()) {
+      if (now - game.createdAt > maxAge && game.status === 'FINISHED') {
+        this.roomCodes.delete(game.roomCode);
+        this.games.delete(gameId);
+      }
+    }
+  }
+}
+```
+
+This GameManager will be instantiated once in server.js and used to manage all games.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 6: Implement Basic Actions (Income, Coup)
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Implement the basic actions (Income and Coup) and turn system.
+
+Context: 
+- INCOME: Take 1 coin from treasury (cannot be challenged or blocked)
+- COUP: Pay 7 coins, target loses 1 influence (cannot be challenged or blocked)
+- MANDATORY: If player has 10+ coins, must Coup
+
+Create `server/utils/actions.js`:
+
+```javascript
+import { ACTIONS, GAME_STATES } from './constants.js';
+
+export class ActionHandler {
+  constructor(game) {
+    this.game = game;
+  }
+
+  // Validate if action is allowed
+  canTakeAction(playerId, action, targetPlayerId = null) {
+    const player = this.game.players.find(p => p.id === playerId);
+    if (!player || !player.isAlive) return { valid: false, reason: 'Player not found or eliminated' };
+
+    const currentPlayer = this.game.getCurrentPlayer();
+    if (currentPlayer.id !== playerId) {
+      return { valid: false, reason: 'Not your turn' };
+    }
+
+    if (this.game.gameState !== GAME_STATES.ACTIVE_TURN) {
+      return { valid: false, reason: 'Cannot take action in current game state' };
+    }
+
+    // Check 10+ coin rule
+    if (player.coins >= 10 && action !== ACTIONS.COUP) {
+      return { valid: false, reason: 'Must Coup with 10+ coins' };
+    }
+
+    switch (action) {
+      case ACTIONS.INCOME:
+        return { valid: true };
+      
+      case ACTIONS.COUP:
+        if (player.coins < 7) {
+          return { valid: false, reason: 'Not enough coins for Coup' };
+        }
+        if (!targetPlayerId) {
+          return { valid: false, reason: 'Must specify target for Coup' };
+        }
+        const target = this.game.players.find(p => p.id === targetPlayerId);
+        if (!target || !target.isAlive) {
+          return { valid: false, reason: 'Invalid target' };
+        }
+        if (target.id === playerId) {
+          return { valid: false, reason: 'Cannot target yourself' };
+        }
+        return { valid: true };
+      
+      default:
+        return { valid: false, reason: 'Unknown action' };
+    }
+  }
+
+  // Execute INCOME action
+  executeIncome(playerId) {
+    const player = this.game.players.find(p => p.id === playerId);
+    player.coins += 1;
+    
+    this.game.actionHistory.push({
+      timestamp: Date.now(),
+      player: player.name,
+      action: ACTIONS.INCOME,
+      result: 'success',
+      details: '+1 coin'
+    });
+
+    this.game.nextTurn();
+    return { success: true, message: `${player.name} took Income (+1 coin)` };
+  }
+
+  // Execute COUP action
+  executeCoup(playerId, targetPlayerId) {
+    const player = this.game.players.find(p => p.id === playerId);
+    const target = this.game.players.find(p => p.id === targetPlayerId);
+
+    // Deduct coins
+    player.coins -= 7;
+
+    // Set game state to waiting for target to reveal card
+    this.game.gameState = GAME_STATES.CHOOSING_INFLUENCE;
+    this.game.actionInProgress = {
+      type: ACTIONS.COUP,
+      actingPlayer: playerId,
+      targetPlayer: targetPlayerId,
+      awaitingRevealFrom: targetPlayerId
+    };
+
+    this.game.actionHistory.push({
+      timestamp: Date.now(),
+      player: player.name,
+      action: ACTIONS.COUP,
+      target: target.name,
+      result: 'pending',
+      details: 'Target must reveal card'
+    });
+
+    return { 
+      success: true, 
+      message: `${player.name} Couped ${target.name}`,
+      requiresReveal: true,
+      targetPlayerId 
+    };
+  }
+
+  // Handle card reveal (when player loses influence)
+  revealCard(playerId, cardIndex) {
+    const player = this.game.players.find(p => p.id === playerId);
+    
+    if (!this.game.actionInProgress || 
+        this.game.actionInProgress.awaitingRevealFrom !== playerId) {
+      return { success: false, message: 'Not awaiting card reveal from this player' };
+    }
+
+    const revealedCard = player.revealCard(cardIndex);
+    if (!revealedCard) {
+      return { success: false, message: 'Invalid card index' };
+    }
+
+    // Add to discard pile
+    this.game.discardPile.push(revealedCard);
+
+    // Update action history
+    const lastAction = this.game.actionHistory[this.game.actionHistory.length - 1];
+    if (lastAction) {
+      lastAction.result = 'success';
+      lastAction.details += ` - ${player.name} revealed ${revealedCard}`;
+    }
+
+    // Check win condition
+    if (this.game.checkWinCondition()) {
+      return { 
+        success: true, 
+        message: `${player.name} revealed ${revealedCard}`,
+        gameOver: true 
+      };
+    }
+
+    // Move to next turn
+    this.game.nextTurn();
+
+    return { 
+      success: true, 
+      message: `${player.name} revealed ${revealedCard} and was eliminated`,
+      eliminated: !player.isAlive
+    };
+  }
+}
+```
+
+This provides the foundation for all actions. We'll add more actions in the next task.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 7: Implement Character Actions (Tax, Foreign Aid, Assassinate, Steal, Exchange)
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Add the remaining character actions to the ActionHandler.
+
+Context:
+- TAX (Duke): Take 3 coins, can be challenged
+- FOREIGN AID: Take 2 coins, can be blocked by Duke
+- ASSASSINATE (Assassin): Pay 3 coins, target loses influence, can be challenged and blocked by Contessa
+- STEAL (Captain): Take 2 coins from target, can be challenged and blocked by Captain/Ambassador
+- EXCHANGE (Ambassador): Draw 2 cards, keep 2 total, return rest, can be challenged
+
+Update `server/utils/actions.js` by adding these methods to the ActionHandler class:
+
+```javascript
+// Add to canTakeAction switch statement:
+case ACTIONS.FOREIGN_AID:
+  return { valid: true };
+
+case ACTIONS.TAX:
+  // Can be challenged but no validation needed here
+  return { valid: true };
+
+case ACTIONS.ASSASSINATE:
+  if (player.coins < 3) {
+    return { valid: false, reason: 'Not enough coins for Assassination' };
+  }
+  if (!targetPlayerId) {
+    return { valid: false, reason: 'Must specify target' };
+  }
+  const assassinTarget = this.game.players.find(p => p.id === targetPlayerId);
+  if (!assassinTarget || !assassinTarget.isAlive) {
+    return { valid: false, reason: 'Invalid target' };
+  }
+  if (assassinTarget.id === playerId) {
+    return { valid: false, reason: 'Cannot target yourself' };
+  }
+  return { valid: true };
+
+case ACTIONS.STEAL:
+  if (!targetPlayerId) {
+    return { valid: false, reason: 'Must specify target' };
+  }
+  const stealTarget = this.game.players.find(p => p.id === targetPlayerId);
+  if (!stealTarget || !stealTarget.isAlive) {
+    return { valid: false, reason: 'Invalid target' };
+  }
+  if (stealTarget.id === playerId) {
+    return { valid: false, reason: 'Cannot target yourself' };
+  }
+  return { valid: true };
+
+case ACTIONS.EXCHANGE:
+  return { valid: true };
+```
+
+Add these new methods to ActionHandler:
+
+```javascript
+// Execute FOREIGN AID (can be blocked by Duke)
+executeForeignAid(playerId) {
+  const player = this.game.players.find(p => p.id === playerId);
+
+  // Set up block window
+  this.game.gameState = GAME_STATES.WAITING_BLOCK;
+  this.game.actionInProgress = {
+    type: ACTIONS.FOREIGN_AID,
+    actingPlayer: playerId,
+    targetPlayer: null,
+    blockable: true,
+    blockableBy: ['Duke'],
+    canChallenge: false
+  };
+
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: player.name,
+    action: ACTIONS.FOREIGN_AID,
+    result: 'pending',
+    details: 'Can be blocked by Duke'
+  });
+
+  return { 
+    success: true, 
+    message: `${player.name} taking Foreign Aid`,
+    awaitingBlock: true,
+    timeout: 10000 // 10 second block window
+  };
+}
+
+// Resolve Foreign Aid after block window
+resolveForeignAid() {
+  const action = this.game.actionInProgress;
+  const player = this.game.players.find(p => p.id === action.actingPlayer);
+  
+  player.coins += 2;
+  
+  const lastAction = this.game.actionHistory[this.game.actionHistory.length - 1];
+  lastAction.result = 'success';
+  lastAction.details = '+2 coins';
+
+  this.game.nextTurn();
+  return { success: true, message: `${player.name} gained 2 coins` };
+}
+
+// Execute TAX (can be challenged)
+executeTax(playerId) {
+  const player = this.game.players.find(p => p.id === playerId);
+
+  // Set up challenge window
+  this.game.gameState = GAME_STATES.WAITING_CHALLENGE;
+  this.game.actionInProgress = {
+    type: ACTIONS.TAX,
+    actingPlayer: playerId,
+    targetPlayer: null,
+    claimedCharacter: 'Duke',
+    canChallenge: true,
+    blockable: false
+  };
+
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: player.name,
+    action: ACTIONS.TAX,
+    result: 'pending',
+    details: 'Claiming Duke'
+  });
+
+  return { 
+    success: true, 
+    message: `${player.name} taking Tax (claiming Duke)`,
+    awaitingChallenge: true,
+    timeout: 10000
+  };
+}
+
+// Resolve Tax after challenge window
+resolveTax() {
+  const action = this.game.actionInProgress;
+  const player = this.game.players.find(p => p.id === action.actingPlayer);
+  
+  player.coins += 3;
+  
+  const lastAction = this.game.actionHistory[this.game.actionHistory.length - 1];
+  lastAction.result = 'success';
+  lastAction.details = '+3 coins';
+
+  this.game.nextTurn();
+  return { success: true, message: `${player.name} gained 3 coins` };
+}
+
+// Execute ASSASSINATE (can be challenged and blocked)
+executeAssassinate(playerId, targetPlayerId) {
+  const player = this.game.players.find(p => p.id === playerId);
+  const target = this.game.players.find(p => p.id === targetPlayerId);
+
+  // Deduct coins immediately
+  player.coins -= 3;
+
+  // Set up challenge window first
+  this.game.gameState = GAME_STATES.WAITING_CHALLENGE;
+  this.game.actionInProgress = {
+    type: ACTIONS.ASSASSINATE,
+    actingPlayer: playerId,
+    targetPlayer: targetPlayerId,
+    claimedCharacter: 'Assassin',
+    canChallenge: true,
+    blockable: true,
+    blockableBy: ['Contessa']
+  };
+
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: player.name,
+    action: ACTIONS.ASSASSINATE,
+    target: target.name,
+    result: 'pending',
+    details: 'Claiming Assassin, paid 3 coins'
+  });
+
+  return { 
+    success: true, 
+    message: `${player.name} assassinating ${target.name}`,
+    awaitingChallenge: true,
+    timeout: 10000
+  };
+}
+
+// Resolve Assassinate (after challenge/block phase)
+resolveAssassinate() {
+  const action = this.game.actionInProgress;
+  const target = this.game.players.find(p => p.id === action.targetPlayer);
+  
+  // Target must reveal card
+  this.game.gameState = GAME_STATES.CHOOSING_INFLUENCE;
+  this.game.actionInProgress.awaitingRevealFrom = action.targetPlayer;
+  
+  return { 
+    success: true, 
+    message: `${target.name} must reveal a card`,
+    requiresReveal: true,
+    targetPlayerId: action.targetPlayer
+  };
+}
+
+// Execute STEAL (can be challenged and blocked)
+executeSteal(playerId, targetPlayerId) {
+  const player = this.game.players.find(p => p.id === playerId);
+  const target = this.game.players.find(p => p.id === targetPlayerId);
+
+  // Set up challenge window
+  this.game.gameState = GAME_STATES.WAITING_CHALLENGE;
+  this.game.actionInProgress = {
+    type: ACTIONS.STEAL,
+    actingPlayer: playerId,
+    targetPlayer: targetPlayerId,
+    claimedCharacter: 'Captain',
+    canChallenge: true,
+    blockable: true,
+    blockableBy: ['Captain', 'Ambassador']
+  };
+
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: player.name,
+    action: ACTIONS.STEAL,
+    target: target.name,
+    result: 'pending',
+    details: 'Claiming Captain'
+  });
+
+  return { 
+    success: true, 
+    message: `${player.name} stealing from ${target.name}`,
+    awaitingChallenge: true,
+    timeout: 10000
+  };
+}
+
+// Resolve Steal
+resolveSteal() {
+  const action = this.game.actionInProgress;
+  const player = this.game.players.find(p => p.id === action.actingPlayer);
+  const target = this.game.players.find(p => p.id === action.targetPlayer);
+  
+  const amount = Math.min(2, target.coins);
+  target.coins -= amount;
+  player.coins += amount;
+  
+  const lastAction = this.game.actionHistory[this.game.actionHistory.length - 1];
+  lastAction.result = 'success';
+  lastAction.details = `Stole ${amount} coins`;
+
+  this.game.nextTurn();
+  return { success: true, message: `${player.name} stole ${amount} coins from ${target.name}` };
+}
+
+// Execute EXCHANGE (can be challenged)
+executeExchange(playerId) {
+  const player = this.game.players.find(p => p.id === playerId);
+
+  // Set up challenge window
+  this.game.gameState = GAME_STATES.WAITING_CHALLENGE;
+  this.game.actionInProgress = {
+    type: ACTIONS.EXCHANGE,
+    actingPlayer: playerId,
+    targetPlayer: null,
+    claimedCharacter: 'Ambassador',
+    canChallenge: true,
+    blockable: false
+  };
+
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: player.name,
+    action: ACTIONS.EXCHANGE,
+    result: 'pending',
+    details: 'Claiming Ambassador'
+  });
+
+  return { 
+    success: true, 
+    message: `${player.name} exchanging cards`,
+    awaitingChallenge: true,
+    timeout: 10000
+  };
+}
+
+// Resolve Exchange (draw cards and let player choose)
+resolveExchange() {
+  const action = this.game.actionInProgress;
+  const player = this.game.players.find(p => p.id === action.actingPlayer);
+  
+  // Draw 2 cards
+  const drawnCards = [
+    this.game.drawCard(),
+    this.game.drawCard()
+  ];
+  
+  // Player sees their current cards + drawn cards
+  const currentCards = player.cards
+    .filter(c => !c.revealed)
+    .map(c => c.type);
+  
+  const allCards = [...currentCards, ...drawnCards];
+  
+  // Store in action for player selection
+  this.game.actionInProgress.exchangeCards = allCards;
+  this.game.actionInProgress.mustKeep = currentCards.length; // How many to keep
+  this.game.actionInProgress.awaitingCardSelection = true;
+  
+  return { 
+    success: true, 
+    message: `${player.name} drew cards`,
+    requiresCardSelection: true,
+    cards: allCards,
+    mustKeep: currentCards.length
+  };
+}
+
+// Handle card selection for Exchange
+selectExchangeCards(playerId, selectedIndices) {
+  const action = this.game.actionInProgress;
+  if (action.actingPlayer !== playerId) {
+    return { success: false, message: 'Not your action' };
+  }
+
+  const player = this.game.players.find(p => p.id === playerId);
+  const allCards = action.exchangeCards;
+  const mustKeep = action.mustKeep;
+
+  if (selectedIndices.length !== mustKeep) {
+    return { success: false, message: `Must select exactly ${mustKeep} cards` };
+  }
+
+  // Update player's cards
+  const newCards = selectedIndices.map(i => allCards[i]);
+  player.cards = player.cards.filter(c => c.revealed); // Keep revealed cards
+  newCards.forEach(cardType => player.addCard(cardType));
+
+  // Return non-selected cards to deck
+  const returnedCards = allCards.filter((card, i) => !selectedIndices.includes(i));
+  this.game.deck.push(...returnedCards);
+  this.game.shuffleDeck();
+
+  const lastAction = this.game.actionHistory[this.game.actionHistory.length - 1];
+  lastAction.result = 'success';
+  lastAction.details = 'Exchanged cards';
+
+  this.game.nextTurn();
+  return { success: true, message: `${player.name} exchanged cards` };
+}
+```
+
+These action methods form the core gameplay mechanics. Next we'll implement the challenge and block systems.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 8: Implement Challenge System
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Implement the challenge system for character actions.
+
+Context:
+When a player claims a character action (Tax/Duke, Assassinate/Assassin, Steal/Captain, Exchange/Ambassador), other players can challenge. If the claimer has the card, the challenger loses influence and the claimer draws a new card. If the claimer doesn't have the card, they lose influence and the action fails.
+
+Add these methods to the ActionHandler class in `server/utils/actions.js`:
+
+```javascript
+// Handle challenge
+handleChallenge(challengerId) {
+  const action = this.game.actionInProgress;
+  
+  if (!action || !action.canChallenge) {
+    return { success: false, message: 'No challengeable action in progress' };
+  }
+
+  if (this.game.gameState !== GAME_STATES.WAITING_CHALLENGE) {
+    return { success: false, message: 'Challenge window has closed' };
+  }
+
+  const claimer = this.game.players.find(p => p.id === action.actingPlayer);
+  const challenger = this.game.players.find(p => p.id === challengerId);
+
+  if (!challenger || !challenger.isAlive) {
+    return { success: false, message: 'Invalid challenger' };
+  }
+
+  if (challengerId === action.actingPlayer) {
+    return { success: false, message: 'Cannot challenge yourself' };
+  }
+
+  // Check if claimer has the claimed character
+  const hasCard = claimer.hasCard(action.claimedCharacter);
+
+  this.game.gameState = GAME_STATES.RESOLVING_CHALLENGE;
+
+  if (hasCard) {
+    // Claimer wins challenge
+    return this.resolveSuccessfulDefense(claimer, challenger, action);
+  } else {
+    // Challenger wins
+    return this.resolveFailedClaim(claimer, challenger, action);
+  }
+}
+
+// Claimer had the card (challenger loses influence)
+resolveSuccessfulDefense(claimer, challenger, action) {
+  // Find and reveal claimer's card
+  const cardIndex = claimer.cards.findIndex(
+    c => c.type === action.claimedCharacter && !c.revealed
+  );
+  const cardType = claimer.cards[cardIndex].type;
+
+  // Reveal card temporarily
+  claimer.cards[cardIndex].revealed = true;
+
+  // Add to action history
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: challenger.name,
+    action: 'CHALLENGE',
+    target: claimer.name,
+    result: 'failed',
+    details: `${claimer.name} revealed ${cardType}`
+  });
+
+  // Challenger must reveal a card
+  this.game.gameState = GAME_STATES.CHOOSING_INFLUENCE;
+  this.game.actionInProgress.challengeResult = {
+    success: true,
+    challengerId: challenger.id,
+    claimerId: claimer.id,
+    revealedCard: cardType,
+    revealedCardIndex: cardIndex,
+    awaitingRevealFrom: challenger.id
+  };
+
+  return {
+    success: true,
+    message: `${claimer.name} revealed ${cardType}! ${challenger.name} must lose influence`,
+    challengeFailed: true,
+    requiresReveal: true,
+    targetPlayerId: challenger.id,
+    revealedCard: cardType
+  };
+}
+
+// Handle reveal after challenge loss
+handleChallengeReveal(playerId, cardIndex) {
+  const action = this.game.actionInProgress;
+  const challengeResult = action.challengeResult;
+
+  if (!challengeResult || challengeResult.awaitingRevealFrom !== playerId) {
+    return { success: false, message: 'Not awaiting reveal from this player' };
+  }
+
+  const player = this.game.players.find(p => p.id === playerId);
+  const revealedCard = player.revealCard(cardIndex);
+
+  if (!revealedCard) {
+    return { success: false, message: 'Invalid card' };
+  }
+
+  this.game.discardPile.push(revealedCard);
+
+  // If challenger lost, claimer gets to reshuffle their revealed card and draw new one
+  if (challengeResult.success && player.id === challengeResult.challengerId) {
+    const claimer = this.game.players.find(p => p.id === challengeResult.claimerId);
+    const claimerCard = claimer.cards[challengeResult.revealedCardIndex];
+    
+    // Return card to deck and draw new one
+    claimerCard.revealed = false;
+    this.game.deck.push(claimerCard.type);
+    this.game.shuffleDeck();
+    claimerCard.type = this.game.drawCard();
+  }
+
+  // Check if player was eliminated
+  if (this.game.checkWinCondition()) {
+    return {
+      success: true,
+      message: `${player.name} was eliminated`,
+      gameOver: true
+    };
+  }
+
+  // Continue with the action (it was successfully defended)
+  delete action.challengeResult;
+  
+  // Move to appropriate next state
+  if (action.blockable) {
+    // If action can be blocked, enter block window
+    this.game.gameState = GAME_STATES.WAITING_BLOCK;
+    return {
+      success: true,
+      message: `${player.name} revealed ${revealedCard}. Waiting for blocks...`,
+      awaitingBlock: true
+    };
+  } else {
+    // Resolve action immediately
+    return this.resolveActionAfterChallenge();
+  }
+}
+
+// Claimer didn't have the card (claimer loses influence, action fails)
+resolveFailedClaim(claimer, challenger, action) {
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: challenger.name,
+    action: 'CHALLENGE',
+    target: claimer.name,
+    result: 'success',
+    details: `${claimer.name} was bluffing`
+  });
+
+  // Claimer must reveal a card
+  this.game.gameState = GAME_STATES.CHOOSING_INFLUENCE;
+  this.game.actionInProgress.challengeResult = {
+    success: false,
+    challengerId: challenger.id,
+    claimerId: claimer.id,
+    awaitingRevealFrom: claimer.id,
+    actionFails: true
+  };
+
+  return {
+    success: true,
+    message: `${claimer.name} was bluffing! Must lose influence`,
+    challengeSucceeded: true,
+    requiresReveal: true,
+    targetPlayerId: claimer.id
+  };
+}
+
+// Handle reveal when claimer loses challenge
+handleFailedClaimReveal(playerId, cardIndex) {
+  const action = this.game.actionInProgress;
+  const challengeResult = action.challengeResult;
+
+  if (!challengeResult || challengeResult.awaitingRevealFrom !== playerId) {
+    return { success: false, message: 'Not awaiting reveal from this player' };
+  }
+
+  const player = this.game.players.find(p => p.id === playerId);
+  const revealedCard = player.revealCard(cardIndex);
+
+  if (!revealedCard) {
+    return { success: false, message: 'Invalid card' };
+  }
+
+  this.game.discardPile.push(revealedCard);
+
+  // Update action history
+  const lastAction = this.game.actionHistory[this.game.actionHistory.length - 1];
+  lastAction.details += ` - ${player.name} revealed ${revealedCard}, action failed`;
+
+  // Check win condition
+  if (this.game.checkWinCondition()) {
+    return {
+      success: true,
+      message: `${player.name} was eliminated`,
+      gameOver: true
+    };
+  }
+
+  // Action fails, move to next turn
+  this.game.nextTurn();
+
+  return {
+    success: true,
+    message: `${player.name} revealed ${revealedCard}. Action failed, moving to next turn`,
+    actionFailed: true
+  };
+}
+
+// Resolve action after successful defense (no blocks)
+resolveActionAfterChallenge() {
+  const action = this.game.actionInProgress;
+
+  switch (action.type) {
+    case ACTIONS.TAX:
+      return this.resolveTax();
+    case ACTIONS.ASSASSINATE:
+      return this.resolveAssassinate();
+    case ACTIONS.STEAL:
+      return this.resolveSteal();
+    case ACTIONS.EXCHANGE:
+      return this.resolveExchange();
+    default:
+      return { success: false, message: 'Unknown action type' };
+  }
+}
+
+// Handle no challenge (timeout)
+handleNoChallenge() {
+  const action = this.game.actionInProgress;
+
+  if (action.blockable) {
+    // Move to block window
+    this.game.gameState = GAME_STATES.WAITING_BLOCK;
+    return {
+      success: true,
+      message: 'No challenge. Waiting for blocks...',
+      awaitingBlock: true
+    };
+  } else {
+    // Resolve action
+    return this.resolveActionAfterChallenge();
+  }
+}
+```
+
+The challenge system is now complete. Next we'll implement the block system.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 9: Implement Block System
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Implement the block/counteraction system.
+
+Context:
+- Foreign Aid can be blocked by Duke
+- Assassination can be blocked by Contessa  
+- Stealing can be blocked by Captain or Ambassador
+- Blocks can be challenged (same as action challenges)
+
+Add these methods to ActionHandler in `server/utils/actions.js`:
+
+```javascript
+// Handle block attempt
+handleBlock(blockerId, blockingCharacter) {
+  const action = this.game.actionInProgress;
+
+  if (!action || !action.blockable) {
+    return { success: false, message: 'No blockable action in progress' };
+  }
+
+  if (this.game.gameState !== GAME_STATES.WAITING_BLOCK) {
+    return { success: false, message: 'Block window has closed' };
+  }
+
+  const blocker = this.game.players.find(p => p.id === blockerId);
+  const actor = this.game.players.find(p => p.id === action.actingPlayer);
+
+  if (!blocker || !blocker.isAlive) {
+    return { success: false, message: 'Invalid blocker' };
+  }
+
+  // Validate blocking character is allowed for this action
+  if (!action.blockableBy.includes(blockingCharacter)) {
+    return { success: false, message: `${blockingCharacter} cannot block ${action.type}` };
+  }
+
+  // Special rule: only target can block Assassination
+  if (action.type === ACTIONS.ASSASSINATE && blockerId !== action.targetPlayer) {
+    return { success: false, message: 'Only target can block assassination' };
+  }
+
+  // Set up challenge window for the block
+  this.game.gameState = GAME_STATES.WAITING_BLOCK_CHALLENGE;
+  this.game.actionInProgress.blockAttempt = {
+    blockerId: blockerId,
+    blockingCharacter: blockingCharacter,
+    canChallenge: true
+  };
+
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: blocker.name,
+    action: 'BLOCK',
+    target: actor.name,
+    result: 'pending',
+    details: `Blocking with ${blockingCharacter}`
+  });
+
+  return {
+    success: true,
+    message: `${blocker.name} blocking with ${blockingCharacter}`,
+    awaitingBlockChallenge: true,
+    blockingCharacter: blockingCharacter,
+    blockerId: blockerId,
+    timeout: 10000
+  };
+}
+
+// Handle challenge on block
+handleBlockChallenge(challengerId) {
+  const action = this.game.actionInProgress;
+  const blockAttempt = action.blockAttempt;
+
+  if (!blockAttempt || !blockAttempt.canChallenge) {
+    return { success: false, message: 'No challengeable block in progress' };
+  }
+
+  if (this.game.gameState !== GAME_STATES.WAITING_BLOCK_CHALLENGE) {
+    return { success: false, message: 'Block challenge window has closed' };
+  }
+
+  const blocker = this.game.players.find(p => p.id === blockAttempt.blockerId);
+  const challenger = this.game.players.find(p => p.id === challengerId);
+
+  if (!challenger || !challenger.isAlive) {
+    return { success: false, message: 'Invalid challenger' };
+  }
+
+  if (challengerId === blockAttempt.blockerId) {
+    return { success: false, message: 'Cannot challenge yourself' };
+  }
+
+  // Check if blocker has the blocking character
+  const hasCard = blocker.hasCard(blockAttempt.blockingCharacter);
+
+  this.game.gameState = GAME_STATES.RESOLVING_BLOCK_CHALLENGE;
+
+  if (hasCard) {
+    // Block succeeds, challenger loses influence
+    return this.resolveSuccessfulBlock(blocker, challenger, blockAttempt);
+  } else {
+    // Block fails, blocker loses influence
+    return this.resolveFailedBlock(blocker, challenger, blockAttempt);
+  }
+}
+
+// Block succeeded (challenger loses influence, action blocked)
+resolveSuccessfulBlock(blocker, challenger, blockAttempt) {
+  // Find blocker's card
+  const cardIndex = blocker.cards.findIndex(
+    c => c.type === blockAttempt.blockingCharacter && !c.revealed
+  );
+  const cardType = blocker.cards[cardIndex].type;
+
+  // Mark as temporarily revealed
+  blocker.cards[cardIndex].revealed = true;
+
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: challenger.name,
+    action: 'CHALLENGE_BLOCK',
+    target: blocker.name,
+    result: 'failed',
+    details: `${blocker.name} revealed ${cardType}`
+  });
+
+  // Challenger must reveal
+  this.game.gameState = GAME_STATES.CHOOSING_INFLUENCE;
+  this.game.actionInProgress.blockChallengeResult = {
+    success: true,
+    blockerId: blocker.id,
+    challengerId: challenger.id,
+    revealedCard: cardType,
+    revealedCardIndex: cardIndex,
+    awaitingRevealFrom: challenger.id,
+    blockSucceeds: true
+  };
+
+  return {
+    success: true,
+    message: `${blocker.name} revealed ${cardType}! ${challenger.name} must lose influence`,
+    requiresReveal: true,
+    targetPlayerId: challenger.id,
+    blockSucceeds: true
+  };
+}
+
+// Block failed (blocker loses influence, action proceeds)
+resolveFailedBlock(blocker, challenger, blockAttempt) {
+  this.game.actionHistory.push({
+    timestamp: Date.now(),
+    player: challenger.name,
+    action: 'CHALLENGE_BLOCK',
+    target: blocker.name,
+    result: 'success',
+    details: `${blocker.name} was bluffing`
+  });
+
+  // Blocker must reveal
+  this.game.gameState = GAME_STATES.CHOOSING_INFLUENCE;
+  this.game.actionInProgress.blockChallengeResult = {
+    success: false,
+    blockerId: blocker.id,
+    challengerId: challenger.id,
+    awaitingRevealFrom: blocker.id,
+    blockFails: true
+  };
+
+  return {
+    success: true,
+    message: `${blocker.name} was bluffing! Must lose influence`,
+    requiresReveal: true,
+    targetPlayerId: blocker.id,
+    blockFails: true
+  };
+}
+
+// Handle reveal after block challenge
+handleBlockChallengeReveal(playerId, cardIndex) {
+  const action = this.game.actionInProgress;
+  const result = action.blockChallengeResult;
+
+  if (!result || result.awaitingRevealFrom !== playerId) {
+    return { success: false, message: 'Not awaiting reveal from this player' };
+  }
+
+  const player = this.game.players.find(p => p.id === playerId);
+  const revealedCard = player.revealCard(cardIndex);
+
+  if (!revealedCard) {
+    return { success: false, message: 'Invalid card' };
+  }
+
+  this.game.discardPile.push(revealedCard);
+
+  // If blocker won challenge, reshuffle their card
+  if (result.blockSucceeds && player.id === result.challengerId) {
+    const blocker = this.game.players.find(p => p.id === result.blockerId);
+    const blockerCard = blocker.cards[result.revealedCardIndex];
+    
+    blockerCard.revealed = false;
+    this.game.deck.push(blockerCard.type);
+    this.game.shuffleDeck();
+    blockerCard.type = this.game.drawCard();
+  }
+
+  // Check win condition
+  if (this.game.checkWinCondition()) {
+    return {
+      success: true,
+      message: `${player.name} was eliminated`,
+      gameOver: true
+    };
+  }
+
+  if (result.blockSucceeds) {
+    // Action is blocked, move to next turn
+    const lastAction = this.game.actionHistory
+      .filter(a => a.action !== 'BLOCK' && a.action !== 'CHALLENGE_BLOCK')
+      .pop();
+    if (lastAction) {
+      lastAction.result = 'blocked';
+    }
+
+    this.game.nextTurn();
+
+    return {
+      success: true,
+      message: `${player.name} revealed ${revealedCard}. Action blocked, moving to next turn`,
+      actionBlocked: true
+    };
+  } else {
+    // Block failed, continue with action
+    delete action.blockAttempt;
+    delete action.blockChallengeResult;
+    return this.resolveActionAfterChallenge();
+  }
+}
+
+// Handle no block challenge (timeout - block succeeds)
+handleNoBlockChallenge() {
+  const action = this.game.actionInProgress;
+  
+  // Block succeeds without challenge
+  const lastAction = this.game.actionHistory
+    .filter(a => a.action !== 'BLOCK' && a.action !== 'CHALLENGE_BLOCK')
+    .pop();
+  if (lastAction) {
+    lastAction.result = 'blocked';
+  }
+
+  this.game.actionHistory[this.game.actionHistory.length - 1].result = 'success';
+
+  this.game.nextTurn();
+
+  return {
+    success: true,
+    message: 'Block succeeded. Moving to next turn',
+    actionBlocked: true
+  };
+}
+
+// Handle no block (timeout - action proceeds)
+handleNoBlock() {
+  const action = this.game.actionInProgress;
+  
+  // No block, resolve action
+  return this.resolveActionAfterChallenge();
+}
+```
+
+The block system is now complete. This completes all core game logic!
+═══════════════════════════════════════════════════════════════════════════
+
+================================================================================
+PHASE 3: SOCKET COMMUNICATION & ROOM MANAGEMENT
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────
+TASK 10: Set Up Socket.io Event Handlers
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Set up Socket.io event handlers to connect the game logic to clients.
+
+Update `server/server.js`:
+
+```javascript
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import { v4 as uuidv4 } from 'uuid';
+import { GameManager } from './managers/GameManager.js';
+import { ActionHandler } from './utils/actions.js';
+
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST']
+  }
+});
+
+app.use(cors());
+app.use(express.json());
+
+// Initialize game manager
+const gameManager = new GameManager();
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', games: gameManager.games.size });
+});
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  // CREATE ROOM
+  socket.on('createRoom', (data, callback) => {
+    try {
+      const { playerName } = data;
+      const playerId = uuidv4();
+      
+      const game = gameManager.createGame();
+      const player = gameManager.addPlayerToGame(
+        game.gameId,
+        playerId,
+        playerName,
+        socket.id
+      );
+
+      socket.join(game.roomCode);
+      
+      callback({
+        success: true,
+        roomCode: game.roomCode,
+        gameId: game.gameId,
+        playerId: playerId,
+        playerData: player.getSafeData(true)
+      });
+
+      io.to(game.roomCode).emit('gameStateUpdate', 
+        game.getGameStateForPlayer(playerId)
+      );
+
+      console.log(`Room created: ${game.roomCode} by ${playerName}`);
+    } catch (error) {
+      callback({ success: false, error: error.message });
+    }
+  });
+
+  // JOIN ROOM
+  socket.on('joinRoom', (data, callback) => {
+    try {
+      const { roomCode, playerName } = data;
+      const playerId = uuidv4();
+      
+      const game = gameManager.getGameByRoomCode(roomCode);
+      if (!game) {
+        return callback({ success: false, error: 'Room not found' });
+      }
+
+      const player = gameManager.addPlayerToGame(
+        game.gameId,
+        playerId,
+        playerName,
+        socket.id
+      );
+
+      socket.join(roomCode);
+      
+      callback({
+        success: true,
+        gameId: game.gameId,
+        playerId: playerId,
+        playerData: player.getSafeData(true)
+      });
+
+      // Notify all players
+      game.players.forEach(p => {
+        io.to(p.socketId).emit('gameStateUpdate', 
+          game.getGameStateForPlayer(p.id)
+        );
+      });
+
+      console.log(`${playerName} joined room: ${roomCode}`);
+    } catch (error) {
+      callback({ success: false, error: error.message });
+    }
+  });
+
+  // START GAME
+  socket.on('startGame', (data, callback) => {
+    try {
+      const { gameId, playerId } = data;
+      const game = gameManager.getGame(gameId);
+      
+      if (!game) {
+        return callback({ success: false, error: 'Game not found' });
+      }
+
+      if (game.hostId !== playerId) {
+        return callback({ success: false, error: 'Only host can start game' });
+      }
+
+      gameManager.startGame(gameId);
+      
+      callback({ success: true });
+
+      // Send updated state to all players
+      game.players.forEach(p => {
+        io.to(p.socketId).emit('gameStateUpdate', 
+          game.getGameStateForPlayer(p.id)
+        );
+      });
+
+      console.log(`Game started: ${game.roomCode}`);
+    } catch (error) {
+      callback({ success: false, error: error.message });
+    }
+  });
+
+  // TAKE ACTION
+  socket.on('takeAction', async (data, callback) => {
+    try {
+      const { gameId, playerId, action, targetPlayerId } = data;
+      const game = gameManager.getGame(gameId);
+      
+      if (!game) {
+        return callback({ success: false, error: 'Game not found' });
+      }
+
+      const actionHandler = new ActionHandler(game);
+      
+      // Validate action
+      const validation = actionHandler.canTakeAction(playerId, action, targetPlayerId);
+      if (!validation.valid) {
+        return callback({ success: false, error: validation.reason });
+      }
+
+      // Execute action based on type
+      let result;
+      switch (action) {
+        case 'INCOME':
+          result = actionHandler.executeIncome(playerId);
+          break;
+        case 'FOREIGN_AID':
+          result = actionHandler.executeForeignAid(playerId);
+          break;
+        case 'COUP':
+          result = actionHandler.executeCoup(playerId, targetPlayerId);
+          break;
+        case 'TAX':
+          result = actionHandler.executeTax(playerId);
+          break;
+        case 'ASSASSINATE':
+          result = actionHandler.executeAssassinate(playerId, targetPlayerId);
+          break;
+        case 'STEAL':
+          result = actionHandler.executeSteal(playerId, targetPlayerId);
+          break;
+        case 'EXCHANGE':
+          result = actionHandler.executeExchange(playerId);
+          break;
+        default:
+          return callback({ success: false, error: 'Unknown action' });
+      }
+
+      callback({ success: true, result });
+
+      // Broadcast updated state
+      game.players.forEach(p => {
+        io.to(p.socketId).emit('gameStateUpdate', 
+          game.getGameStateForPlayer(p.id)
+        );
+      });
+
+      // Set timeout for challenge/block windows if needed
+      if (result.awaitingChallenge || result.awaitingBlock) {
+        setTimeout(() => {
+          const currentGame = gameManager.getGame(gameId);
+          if (!currentGame) return;
+
+          const handler = new ActionHandler(currentGame);
+          let timeoutResult;
+
+          if (result.awaitingChallenge) {
+            timeoutResult = handler.handleNoChallenge();
+          } else if (result.awaitingBlock) {
+            timeoutResult = handler.handleNoBlock();
+          }
+
+          currentGame.players.forEach(p => {
+            io.to(p.socketId).emit('gameStateUpdate', 
+              currentGame.getGameStateForPlayer(p.id)
+            );
+          });
+        }, result.timeout || 10000);
+      }
+
+    } catch (error) {
+      console.error('Action error:', error);
+      callback({ success: false, error: error.message });
+    }
+  });
+
+  // More event handlers will be added in next task...
+
+  // DISCONNECT
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+    
+    // Find games with this socket and mark player as disconnected
+    for (const [gameId, game] of gameManager.games.entries()) {
+      const player = game.players.find(p => p.socketId === socket.id);
+      if (player) {
+        player.isConnected = false;
+        
+        // Notify other players
+        game.players.forEach(p => {
+          if (p.socketId !== socket.id) {
+            io.to(p.socketId).emit('playerDisconnected', {
+              playerId: player.id,
+              playerName: player.name
+            });
+          }
+        });
+      }
+    }
+  });
+});
+
+const PORT = process.env.PORT || 3001;
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+This sets up the basic Socket.io structure. We'll add more event handlers next.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 11: Add Challenge and Block Event Handlers
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Add Socket.io event handlers for challenges, blocks, and card reveals.
+
+Add these event handlers to `server/server.js` (after the takeAction handler):
+
+```javascript
+// CHALLENGE
+socket.on('challenge', (data, callback) => {
+  try {
+    const { gameId, playerId } = data;
+    const game = gameManager.getGame(gameId);
+    
+    if (!game) {
+      return callback({ success: false, error: 'Game not found' });
+    }
+
+    const actionHandler = new ActionHandler(game);
+    const result = actionHandler.handleChallenge(playerId);
+    
+    callback(result);
+
+    // Broadcast updated state
+    game.players.forEach(p => {
+      io.to(p.socketId).emit('gameStateUpdate', 
+        game.getGameStateForPlayer(p.id)
+      );
+    });
+
+  } catch (error) {
+    callback({ success: false, error: error.message });
+  }
+});
+
+// BLOCK
+socket.on('block', (data, callback) => {
+  try {
+    const { gameId, playerId, blockingCharacter } = data;
+    const game = gameManager.getGame(gameId);
+    
+    if (!game) {
+      return callback({ success: false, error: 'Game not found' });
+    }
+
+    const actionHandler = new ActionHandler(game);
+    const result = actionHandler.handleBlock(playerId, blockingCharacter);
+    
+    callback(result);
+
+    // Broadcast updated state
+    game.players.forEach(p => {
+      io.to(p.socketId).emit('gameStateUpdate', 
+        game.getGameStateForPlayer(p.id)
+      );
+    });
+
+    // Set timeout for block challenge window
+    if (result.awaitingBlockChallenge) {
+      setTimeout(() => {
+        const currentGame = gameManager.getGame(gameId);
+        if (!currentGame) return;
+
+        const handler = new ActionHandler(currentGame);
+        const timeoutResult = handler.handleNoBlockChallenge();
+
+        currentGame.players.forEach(p => {
+          io.to(p.socketId).emit('gameStateUpdate', 
+            currentGame.getGameStateForPlayer(p.id)
+          );
+        });
+      }, result.timeout || 10000);
+    }
+
+  } catch (error) {
+    callback({ success: false, error: error.message });
+  }
+});
+
+// CHALLENGE BLOCK
+socket.on('challengeBlock', (data, callback) => {
+  try {
+    const { gameId, playerId } = data;
+    const game = gameManager.getGame(gameId);
+    
+    if (!game) {
+      return callback({ success: false, error: 'Game not found' });
+    }
+
+    const actionHandler = new ActionHandler(game);
+    const result = actionHandler.handleBlockChallenge(playerId);
+    
+    callback(result);
+
+    // Broadcast updated state
+    game.players.forEach(p => {
+      io.to(p.socketId).emit('gameStateUpdate', 
+        game.getGameStateForPlayer(p.id)
+      );
+    });
+
+  } catch (error) {
+    callback({ success: false, error: error.message });
+  }
+});
+
+// REVEAL CARD (when losing influence)
+socket.on('revealCard', (data, callback) => {
+  try {
+    const { gameId, playerId, cardIndex } = data;
+    const game = gameManager.getGame(gameId);
+    
+    if (!game) {
+      return callback({ success: false, error: 'Game not found' });
+    }
+
+    const actionHandler = new ActionHandler(game);
+    let result;
+
+    // Determine which type of reveal this is
+    if (game.actionInProgress?.challengeResult) {
+      if (game.actionInProgress.challengeResult.actionFails) {
+        result = actionHandler.handleFailedClaimReveal(playerId, cardIndex);
+      } else {
+        result = actionHandler.handleChallengeReveal(playerId, cardIndex);
+      }
+    } else if (game.actionInProgress?.blockChallengeResult) {
+      result = actionHandler.handleBlockChallengeReveal(playerId, cardIndex);
+    } else {
+      // Regular reveal (from Coup or Assassination)
+      result = actionHandler.revealCard(playerId, cardIndex);
+    }
+    
+    callback(result);
+
+    // Broadcast updated state
+    game.players.forEach(p => {
+      io.to(p.socketId).emit('gameStateUpdate', 
+        game.getGameStateForPlayer(p.id)
+      );
+    });
+
+    // If game is over, notify everyone
+    if (result.gameOver) {
+      io.to(game.roomCode).emit('gameOver', {
+        winner: game.winner,
+        players: game.players.map(p => p.getSafeData())
+      });
+    }
+
+  } catch (error) {
+    callback({ success: false, error: error.message });
+  }
+});
+
+// SELECT CARDS (for Ambassador Exchange)
+socket.on('selectCards', (data, callback) => {
+  try {
+    const { gameId, playerId, selectedIndices } = data;
+    const game = gameManager.getGame(gameId);
+    
+    if (!game) {
+      return callback({ success: false, error: 'Game not found' });
+    }
+
+    const actionHandler = new ActionHandler(game);
+    const result = actionHandler.selectExchangeCards(playerId, selectedIndices);
+    
+    callback(result);
+
+    // Broadcast updated state
+    game.players.forEach(p => {
+      io.to(p.socketId).emit('gameStateUpdate', 
+        game.getGameStateForPlayer(p.id)
+      );
+    });
+
+  } catch (error) {
+    callback({ success: false, error: error.message });
+  }
+});
+
+// PASS (decline to challenge/block)
+socket.on('pass', (data, callback) => {
+  try {
+    const { gameId, playerId } = data;
+    const game = gameManager.getGame(gameId);
+    
+    if (!game) {
+      return callback({ success: false, error: 'Game not found' });
+    }
+
+    // This is mainly for UI feedback - actual timeout handles progression
+    callback({ success: true, message: 'Passed' });
+
+  } catch (error) {
+    callback({ success: false, error: error.message });
+  }
+});
+```
+
+All Socket.io event handlers are now complete!
+═══════════════════════════════════════════════════════════════════════════
+
+================================================================================
+PHASE 4: FRONTEND IMPLEMENTATION
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────
+TASK 12: Create Zustand Game Store
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create a Zustand store to manage game state on the client.
+
+Create `client/src/store/gameStore.js`:
+
+```javascript
+import { create } from 'zustand';
+
+export const useGameStore = create((set, get) => ({
+  // Connection state
+  socket: null,
+  connected: false,
+  
+  // Player state
+  playerId: null,
+  playerName: null,
+  
+  // Room state
+  roomCode: null,
+  gameId: null,
+  
+  // Game state
+  gameState: null,
+  players: [],
+  currentPlayerId: null,
+  actionInProgress: null,
+  actionHistory: [],
+  winner: null,
+  hostId: null,
+  
+  // UI state
+  error: null,
+  loading: false,
+  
+  // Actions
+  setSocket: (socket) => set({ socket, connected: true }),
+  
+  setPlayerInfo: (playerId, playerName) => set({ playerId, playerName }),
+  
+  setRoomInfo: (roomCode, gameId) => set({ roomCode, gameId }),
+  
+  updateGameState: (gameState) => set({
+    gameState: gameState.gameState,
+    players: gameState.players,
+    currentPlayerId: gameState.currentPlayerId,
+    actionInProgress: gameState.actionInProgress,
+    actionHistory: gameState.actionHistory,
+    winner: gameState.winner,
+    hostId: gameState.hostId
+  }),
+  
+  setError: (error) => set({ error }),
+  
+  clearError: () => set({ error: null }),
+  
+  setLoading: (loading) => set({ loading }),
+  
+  reset: () => set({
+    socket: null,
+    connected: false,
+    playerId: null,
+    playerName: null,
+    roomCode: null,
+    gameId: null,
+    gameState: null,
+    players: [],
+    currentPlayerId: null,
+    actionInProgress: null,
+    actionHistory: [],
+    winner: null,
+    hostId: null,
+    error: null,
+    loading: false
+  }),
+  
+  // Computed values
+  getCurrentPlayer: () => {
+    const state = get();
+    return state.players.find(p => p.id === state.currentPlayerId);
+  },
+  
+  getMyPlayer: () => {
+    const state = get();
+    return state.players.find(p => p.id === state.playerId);
+  },
+  
+  isMyTurn: () => {
+    const state = get();
+    return state.currentPlayerId === state.playerId;
+  },
+  
+  isHost: () => {
+    const state = get();
+    return state.hostId === state.playerId;
+  },
+  
+  canTakeAction: (action) => {
+    const state = get();
+    const myPlayer = state.players.find(p => p.id === state.playerId);
+    
+    if (!myPlayer || !myPlayer.isAlive) return false;
+    if (!state.isMyTurn()) return false;
+    if (state.gameState !== 'ACTIVE_TURN') return false;
+    
+    // Check coin requirements
+    if (action === 'COUP' && myPlayer.coins < 7) return false;
+    if (action === 'ASSASSINATE' && myPlayer.coins < 3) return false;
+    
+    // Check 10+ coin rule
+    if (myPlayer.coins >= 10 && action !== 'COUP') return false;
+    
+    return true;
+  }
+}));
+```
+
+This store will be used by all React components to access and update game state.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 13: Create Lobby Components
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create the lobby components for creating and joining games.
+
+1. Create `client/src/components/Lobby/CreateRoom.jsx`:
+
+```javascript
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useGameStore } from '../../store/gameStore';
+
+export const CreateRoom = () => {
+  const [playerName, setPlayerName] = useState('');
+  const [error, setError] = useState('');
+  const socket = useGameStore(state => state.socket);
+  const setPlayerInfo = useGameStore(state => state.setPlayerInfo);
+  const setRoomInfo = useGameStore(state => state.setRoomInfo);
+  const navigate = useNavigate();
+
+  const handleCreate = (e) => {
+    e.preventDefault();
+    
+    if (!playerName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    if (!socket) {
+      setError('Not connected to server');
+      return;
+    }
+
+    socket.emit('createRoom', { playerName: playerName.trim() }, (response) => {
+      if (response.success) {
+        setPlayerInfo(response.playerId, playerName.trim());
+        setRoomInfo(response.roomCode, response.gameId);
+        navigate(`/game/${response.roomCode}`);
+      } else {
+        setError(response.error || 'Failed to create room');
+      }
+    });
+  };
+
+  return (
+    <div className="create-room">
+      <h2>Create Room</h2>
+      <form onSubmit={handleCreate}>
+        <input
+          type="text"
+          placeholder="Enter your name"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          maxLength={20}
+        />
+        {error && <p className="error">{error}</p>}
+        <button type="submit">Create Room</button>
+      </form>
+    </div>
+  );
+};
+```
+
+2. Create `client/src/components/Lobby/JoinRoom.jsx`:
+
+```javascript
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useGameStore } from '../../store/gameStore';
+
+export const JoinRoom = () => {
+  const [playerName, setPlayerName] = useState('');
+  const [roomCode, setRoomCode] = useState('');
+  const [error, setError] = useState('');
+  const socket = useGameStore(state => state.socket);
+  const setPlayerInfo = useGameStore(state => state.setPlayerInfo);
+  const setRoomInfo = useGameStore(state => state.setRoomInfo);
+  const navigate = useNavigate();
+
+  const handleJoin = (e) => {
+    e.preventDefault();
+    
+    if (!playerName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+
+    if (!roomCode.trim() || roomCode.length !== 4) {
+      setError('Please enter a valid 4-character room code');
+      return;
+    }
+
+    if (!socket) {
+      setError('Not connected to server');
+      return;
+    }
+
+    socket.emit('joinRoom', { 
+      playerName: playerName.trim(), 
+      roomCode: roomCode.toUpperCase() 
+    }, (response) => {
+      if (response.success) {
+        setPlayerInfo(response.playerId, playerName.trim());
+        setRoomInfo(roomCode.toUpperCase(), response.gameId);
+        navigate(`/game/${roomCode.toUpperCase()}`);
+      } else {
+        setError(response.error || 'Failed to join room');
+      }
+    });
+  };
+
+  return (
+    <div className="join-room">
+      <h2>Join Room</h2>
+      <form onSubmit={handleJoin}>
+        <input
+          type="text"
+          placeholder="Enter your name"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          maxLength={20}
+        />
+        <input
+          type="text"
+          placeholder="Room Code (e.g., ABCD)"
+          value={roomCode}
+          onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+          maxLength={4}
+        />
+        {error && <p className="error">{error}</p>}
+        <button type="submit">Join Room</button>
+      </form>
+    </div>
+  );
+};
+```
+
+3. Update `client/src/App.jsx`:
+
+```javascript
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { io } from 'socket.io-client';
+import { useGameStore } from './store/gameStore';
+import { CreateRoom } from './components/Lobby/CreateRoom';
+import { JoinRoom } from './components/Lobby/JoinRoom';
+import { GameBoard } from './components/Game/GameBoard';
+import './styles/global.css';
+
+function App() {
+  const setSocket = useGameStore(state => state.setSocket);
+  const updateGameState = useGameStore(state => state.updateGameState);
+
+  useEffect(() => {
+    const socket = io('http://localhost:3001');
+    
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      setSocket(socket);
+    });
+
+    socket.on('gameStateUpdate', (gameState) => {
+      console.log('Game state updated:', gameState);
+      updateGameState(gameState);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+    });
+
+    return () => {
+      socket.close();
+    };
+  }, []);
+
+  return (
+    <BrowserRouter>
+      <div className="app">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/game/:roomCode" element={<GameBoard />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  );
+}
+
+function LandingPage() {
+  return (
+    <div className="landing-page">
+      <h1>COUP - Online</h1>
+      <div className="lobby-options">
+        <CreateRoom />
+        <div className="divider">OR</div>
+        <JoinRoom />
+      </div>
+    </div>
+  );
+}
+
+export default App;
+```
+
+The lobby components are now complete!
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 14: Create Game Board and Player Display Components
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create the main game board and player display components.
+
+1. Create `client/src/components/Game/GameBoard.jsx`:
+
+```javascript
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useGameStore } from '../../store/gameStore';
+import { PlayerList } from './PlayerList';
+import { PlayerHand } from './PlayerHand';
+import { ActionButtons } from './ActionButtons';
+import { ChallengePanel } from './ChallengePanel';
+import { GameLog } from './GameLog';
+import '../../styles/game.css';
+
+export const GameBoard = () => {
+  const { roomCode } = useParams();
+  const navigate = useNavigate();
+  const socket = useGameStore(state => state.socket);
+  const gameId = useGameStore(state => state.gameId);
+  const playerId = useGameStore(state => state.playerId);
+  const gameState = useGameStore(state => state.gameState);
+  const players = useGameStore(state => state.players);
+  const isHost = useGameStore(state => state.isHost);
+  const winner = useGameStore(state => state.winner);
+
+  const [showStartButton, setShowStartButton] = useState(false);
+
+  useEffect(() => {
+    if (!socket || !playerId) {
+      navigate('/');
+    }
+  }, [socket, playerId, navigate]);
+
+  useEffect(() => {
+    // Show start button for host in lobby
+    setShowStartButton(isHost() && gameState === 'LOBBY' && players.length >= 2);
+  }, [gameState, players.length, isHost]);
+
+  const handleStartGame = () => {
+    if (!socket || !gameId) return;
+
+    socket.emit('startGame', { gameId, playerId }, (response) => {
+      if (!response.success) {
+        alert(response.error);
+      }
+    });
+  };
+
+  if (!socket || !playerId) {
+    return <div>Connecting...</div>;
+  }
+
+  if (gameState === 'LOBBY') {
+    return (
+      <div className="lobby-waiting">
+        <h2>Room: {roomCode}</h2>
+        <p>Waiting for players... ({players.length}/6)</p>
+        <PlayerList />
+        {showStartButton && (
+          <button onClick={handleStartGame} className="start-game-btn">
+            Start Game
+          </button>
+        )}
+        {!isHost() && <p>Waiting for host to start the game...</p>}
+      </div>
+    );
+  }
+
+  if (gameState === 'GAME_OVER') {
+    const winnerPlayer = players.find(p => p.id === winner);
+    return (
+      <div className="game-over">
+        <h1>Game Over!</h1>
+        <h2>{winnerPlayer?.name} wins!</h2>
+        <button onClick={() => navigate('/')}>Back to Lobby</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="game-board">
+      <div className="game-header">
+        <h2>COUP - Room: {roomCode}</h2>
+      </div>
+      
+      <div className="game-content">
+        <div className="left-panel">
+          <PlayerList />
+          <GameLog />
+        </div>
+        
+        <div className="main-panel">
+          <PlayerHand />
+          <ChallengePanel />
+          <ActionButtons />
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+2. Create `client/src/components/Game/PlayerList.jsx`:
+
+```javascript
+import { useGameStore } from '../../store/gameStore';
+
+export const PlayerList = () => {
+  const players = useGameStore(state => state.players);
+  const currentPlayerId = useGameStore(state => state.currentPlayerId);
+  const playerId = useGameStore(state => state.playerId);
+
+  return (
+    <div className="player-list">
+      <h3>Players</h3>
+      {players.map(player => (
+        <div 
+          key={player.id} 
+          className={`player-item ${
+            player.id === currentPlayerId ? 'active' : ''
+          } ${!player.isAlive ? 'eliminated' : ''} ${
+            player.id === playerId ? 'you' : ''
+          }`}
+        >
+          <div className="player-info">
+            <span className="player-name">
+              {player.name}
+              {player.id === playerId && ' (You)'}
+              {player.id === currentPlayerId && ' ▶'}
+            </span>
+            {!player.isConnected && <span className="disconnected"> [DC]</span>}
+          </div>
+          <div className="player-stats">
+            <span className="coins">💰 {player.coins}</span>
+            <span className="influence">
+              {'❤️'.repeat(player.influence)}
+              {'💔'.repeat(2 - player.influence)}
+            </span>
+          </div>
+          {player.cards && (
+            <div className="player-cards">
+              {player.cards.map((card, idx) => (
+                <span key={idx} className="card-mini">
+                  {card.revealed ? `🎴 ${card.type}` : '🎴'}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+```
+
+3. Create `client/src/components/Game/PlayerHand.jsx`:
+
+```javascript
+import { useGameStore } from '../../store/gameStore';
+
+export const PlayerHand = () => {
+  const myPlayer = useGameStore(state => state.getMyPlayer());
+  const gameState = useGameStore(state => state.gameState);
+  const actionInProgress = useGameStore(state => state.actionInProgress);
+
+  if (!myPlayer || !myPlayer.cards) {
+    return null;
+  }
+
+  const needsReveal = gameState === 'CHOOSING_INFLUENCE' && 
+    actionInProgress?.awaitingRevealFrom === myPlayer.id;
+
+  return (
+    <div className="player-hand">
+      <h3>Your Cards</h3>
+      <div className="cards-container">
+        {myPlayer.cards.map((card, idx) => (
+          <div 
+            key={idx} 
+            className={`card ${card.revealed ? 'revealed' : ''}`}
+          >
+            <div className="card-content">
+              {card.revealed ? (
+                <>
+                  <span className="card-emoji">💀</span>
+                  <span className="card-type">{card.type}</span>
+                </>
+              ) : (
+                <>
+                  <span className="card-emoji">🎴</span>
+                  <span className="card-type">{card.type}</span>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {needsReveal && (
+        <p className="reveal-prompt">⚠️ You must reveal a card!</p>
+      )}
+    </div>
+  );
+};
+```
+
+These components handle the main game display. Next we'll add action buttons.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 15: Create Action Buttons Component
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create the action buttons component that lets players take their turn actions.
+
+Create `client/src/components/Game/ActionButtons.jsx`:
+
+```javascript
+import { useState } from 'react';
+import { useGameStore } from '../../store/gameStore';
+import { ACTIONS } from '../../utils/constants';
+
+export const ActionButtons = () => {
+  const socket = useGameStore(state => state.socket);
+  const gameId = useGameStore(state => state.gameId);
+  const playerId = useGameStore(state => state.playerId);
+  const isMyTurn = useGameStore(state => state.isMyTurn);
+  const canTakeAction = useGameStore(state => state.canTakeAction);
+  const myPlayer = useGameStore(state => state.getMyPlayer());
+  const players = useGameStore(state => state.players);
+  const gameState = useGameStore(state => state.gameState);
+  const actionInProgress = useGameStore(state => state.actionInProgress);
+
+  const [selectedAction, setSelectedAction] = useState(null);
+  const [selectedTarget, setSelectedTarget] = useState(null);
+  const [error, setError] = useState('');
+
+  if (!isMyTurn() || gameState !== 'ACTIVE_TURN') {
+    return null;
+  }
+
+  const mustCoup = myPlayer && myPlayer.coins >= 10;
+
+  const handleActionClick = (action) => {
+    setError('');
+    
+    // Actions that need a target
+    if ([ACTIONS.COUP, ACTIONS.ASSASSINATE, ACTIONS.STEAL].includes(action)) {
+      setSelectedAction(action);
+      setSelectedTarget(null);
+    } else {
+      // Actions without target
+      takeAction(action, null);
+    }
+  };
+
+  const handleTargetSelect = (targetId) => {
+    setSelectedTarget(targetId);
+  };
+
+  const handleConfirmAction = () => {
+    if (!selectedTarget) {
+      setError('Please select a target');
+      return;
+    }
+    takeAction(selectedAction, selectedTarget);
+  };
+
+  const handleCancelTarget = () => {
+    setSelectedAction(null);
+    setSelectedTarget(null);
+    setError('');
+  };
+
+  const takeAction = (action, targetPlayerId) => {
+    if (!socket || !gameId) return;
+
+    socket.emit('takeAction', {
+      gameId,
+      playerId,
+      action,
+      targetPlayerId
+    }, (response) => {
+      if (response.success) {
+        setSelectedAction(null);
+        setSelectedTarget(null);
+        setError('');
+      } else {
+        setError(response.error || 'Action failed');
+      }
+    });
+  };
+
+  // If selecting target, show target selection UI
+  if (selectedAction) {
+    const validTargets = players.filter(p => 
+      p.isAlive && p.id !== playerId
+    );
+
+    return (
+      <div className="action-buttons target-selection">
+        <h3>Select Target for {selectedAction}</h3>
+        <div className="target-list">
+          {validTargets.map(player => (
+            <button
+              key={player.id}
+              onClick={() => handleTargetSelect(player.id)}
+              className={`target-btn ${selectedTarget === player.id ? 'selected' : ''}`}
+            >
+              {player.name} (💰{player.coins} ❤️{player.influence})
+            </button>
+          ))}
+        </div>
+        {error && <p className="error">{error}</p>}
+        <div className="target-actions">
+          <button onClick={handleConfirmAction} disabled={!selectedTarget}>
+            Confirm
+          </button>
+          <button onClick={handleCancelTarget}>Cancel</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="action-buttons">
+      <h3>Your Turn - Choose Action</h3>
+      {mustCoup && <p className="must-coup">⚠️ You have 10+ coins and must COUP!</p>}
+      {error && <p className="error">{error}</p>}
+      
+      <div className="actions-grid">
+        {/* Basic Actions */}
+        <button
+          onClick={() => handleActionClick(ACTIONS.INCOME)}
+          disabled={!canTakeAction(ACTIONS.INCOME) || mustCoup}
+          className="action-btn income"
+        >
+          <span className="action-name">Income</span>
+          <span className="action-desc">+1 coin</span>
+        </button>
+
+        <button
+          onClick={() => handleActionClick(ACTIONS.FOREIGN_AID)}
+          disabled={!canTakeAction(ACTIONS.FOREIGN_AID) || mustCoup}
+          className="action-btn foreign-aid"
+        >
+          <span className="action-name">Foreign Aid</span>
+          <span className="action-desc">+2 coins (blockable)</span>
+        </button>
+
+        <button
+          onClick={() => handleActionClick(ACTIONS.COUP)}
+          disabled={!canTakeAction(ACTIONS.COUP)}
+          className={`action-btn coup ${mustCoup ? 'required' : ''}`}
+        >
+          <span className="action-name">Coup</span>
+          <span className="action-desc">-7 coins, kill target</span>
+        </button>
+
+        {/* Character Actions */}
+        <button
+          onClick={() => handleActionClick(ACTIONS.TAX)}
+          disabled={!canTakeAction(ACTIONS.TAX) || mustCoup}
+          className="action-btn tax"
+          title="Claim Duke"
+        >
+          <span className="action-name">Tax</span>
+          <span className="action-desc">+3 coins (Duke)</span>
+        </button>
+
+        <button
+          onClick={() => handleActionClick(ACTIONS.ASSASSINATE)}
+          disabled={!canTakeAction(ACTIONS.ASSASSINATE) || mustCoup}
+          className="action-btn assassinate"
+          title="Claim Assassin"
+        >
+          <span className="action-name">Assassinate</span>
+          <span className="action-desc">-3 coins, kill (Assassin)</span>
+        </button>
+
+        <button
+          onClick={() => handleActionClick(ACTIONS.STEAL)}
+          disabled={!canTakeAction(ACTIONS.STEAL) || mustCoup}
+          className="action-btn steal"
+          title="Claim Captain"
+        >
+          <span className="action-name">Steal</span>
+          <span className="action-desc">+2 coins from target (Captain)</span>
+        </button>
+
+        <button
+          onClick={() => handleActionClick(ACTIONS.EXCHANGE)}
+          disabled={!canTakeAction(ACTIONS.EXCHANGE) || mustCoup}
+          className="action-btn exchange"
+          title="Claim Ambassador"
+        >
+          <span className="action-name">Exchange</span>
+          <span className="action-desc">Swap cards (Ambassador)</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+```
+
+This component handles all action buttons with validation and target selection.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 16: Create Challenge and Block Panel Component
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create the challenge/block panel that appears during challenge and block windows.
+
+Create `client/src/components/Game/ChallengePanel.jsx`:
+
+```javascript
+import { useState, useEffect } from 'react';
+import { useGameStore } from '../../store/gameStore';
+
+export const ChallengePanel = () => {
+  const socket = useGameStore(state => state.socket);
+  const gameId = useGameStore(state => state.gameId);
+  const playerId = useGameStore(state => state.playerId);
+  const gameState = useGameStore(state => state.gameState);
+  const actionInProgress = useGameStore(state => state.actionInProgress);
+  const players = useGameStore(state => state.players);
+  const myPlayer = useGameStore(state => state.getMyPlayer());
+
+  const [timer, setTimer] = useState(10);
+  const [selectedBlock, setSelectedBlock] = useState(null);
+
+  useEffect(() => {
+    if (['WAITING_CHALLENGE', 'WAITING_BLOCK', 'WAITING_BLOCK_CHALLENGE'].includes(gameState)) {
+      setTimer(10);
+      const interval = setInterval(() => {
+        setTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [gameState]);
+
+  useEffect(() => {
+    setSelectedBlock(null);
+  }, [gameState]);
+
+  if (!actionInProgress) return null;
+
+  const actor = players.find(p => p.id === actionInProgress.actingPlayer);
+  const target = actionInProgress.targetPlayer ? 
+    players.find(p => p.id === actionInProgress.targetPlayer) : null;
+
+  // Challenge window
+  if (gameState === 'WAITING_CHALLENGE' && playerId !== actionInProgress.actingPlayer) {
+    return (
+      <div className="challenge-panel">
+        <div className="panel-header">
+          <h3>Challenge Window</h3>
+          <span className="timer">{timer}s</span>
+        </div>
+        <p>
+          {actor?.name} is claiming {actionInProgress.claimedCharacter} for {actionInProgress.type}
+          {target && ` targeting ${target.name}`}
+        </p>
+        <div className="panel-actions">
+          <button 
+            onClick={() => handleChallenge()}
+            className="challenge-btn"
+          >
+            Challenge
+          </button>
+          <button 
+            onClick={() => handlePass()}
+            className="pass-btn"
+          >
+            Pass
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Block window
+  if (gameState === 'WAITING_BLOCK') {
+    const canBlock = actionInProgress.blockableBy && actionInProgress.blockableBy.length > 0;
+    const canIBlock = actionInProgress.type === 'ASSASSINATE' ? 
+      playerId === actionInProgress.targetPlayer : 
+      playerId !== actionInProgress.actingPlayer;
+
+    if (!canBlock || !canIBlock) return null;
+
+    return (
+      <div className="challenge-panel">
+        <div className="panel-header">
+          <h3>Block Window</h3>
+          <span className="timer">{timer}s</span>
+        </div>
+        <p>
+          {actor?.name} is using {actionInProgress.type}
+          {target && ` on ${target.name}`}
+        </p>
+        <p>Blockable by: {actionInProgress.blockableBy.join(', ')}</p>
+        
+        {!selectedBlock ? (
+          <div className="panel-actions">
+            {actionInProgress.blockableBy.map(character => (
+              <button
+                key={character}
+                onClick={() => setSelectedBlock(character)}
+                className="block-btn"
+              >
+                Block with {character}
+              </button>
+            ))}
+            <button 
+              onClick={() => handlePass()}
+              className="pass-btn"
+            >
+              Pass
+            </button>
+          </div>
+        ) : (
+          <div className="panel-actions">
+            <p>Block with {selectedBlock}?</p>
+            <button 
+              onClick={() => handleBlock(selectedBlock)}
+              className="confirm-btn"
+            >
+              Confirm
+            </button>
+            <button 
+              onClick={() => setSelectedBlock(null)}
+              className="cancel-btn"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Block challenge window
+  if (gameState === 'WAITING_BLOCK_CHALLENGE' && 
+      playerId !== actionInProgress.blockAttempt?.blockerId) {
+    const blocker = players.find(p => p.id === actionInProgress.blockAttempt.blockerId);
+    
+    return (
+      <div className="challenge-panel">
+        <div className="panel-header">
+          <h3>Challenge Block</h3>
+          <span className="timer">{timer}s</span>
+        </div>
+        <p>
+          {blocker?.name} is blocking with {actionInProgress.blockAttempt.blockingCharacter}
+        </p>
+        <div className="panel-actions">
+          <button 
+            onClick={() => handleChallengeBlock()}
+            className="challenge-btn"
+          >
+            Challenge Block
+          </button>
+          <button 
+            onClick={() => handlePass()}
+            className="pass-btn"
+          >
+            Pass
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Card reveal window
+  if (gameState === 'CHOOSING_INFLUENCE' && 
+      actionInProgress.awaitingRevealFrom === playerId) {
+    return (
+      <div className="challenge-panel reveal-panel">
+        <h3>Choose a Card to Reveal</h3>
+        <div className="reveal-cards">
+          {myPlayer?.cards.map((card, idx) => (
+            !card.revealed && (
+              <button
+                key={idx}
+                onClick={() => handleRevealCard(idx)}
+                className="reveal-card-btn"
+              >
+                Reveal {card.type}
+              </button>
+            )
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Card selection for Exchange
+  if (actionInProgress.awaitingCardSelection && 
+      actionInProgress.actingPlayer === playerId) {
+    return <ExchangeCardSelection />;
+  }
+
+  return null;
+
+  // Helper functions
+  function handleChallenge() {
+    if (!socket || !gameId) return;
+    socket.emit('challenge', { gameId, playerId }, (response) => {
+      if (!response.success) {
+        alert(response.message);
+      }
+    });
+  }
+
+  function handleBlock(blockingCharacter) {
+    if (!socket || !gameId) return;
+    socket.emit('block', { gameId, playerId, blockingCharacter }, (response) => {
+      if (!response.success) {
+        alert(response.message);
+      }
+    });
+  }
+
+  function handleChallengeBlock() {
+    if (!socket || !gameId) return;
+    socket.emit('challengeBlock', { gameId, playerId }, (response) => {
+      if (!response.success) {
+        alert(response.message);
+      }
+    });
+  }
+
+  function handlePass() {
+    if (!socket || !gameId) return;
+    socket.emit('pass', { gameId, playerId });
+  }
+
+  function handleRevealCard(cardIndex) {
+    if (!socket || !gameId) return;
+    socket.emit('revealCard', { gameId, playerId, cardIndex }, (response) => {
+      if (!response.success) {
+        alert(response.message);
+      }
+    });
+  }
+};
+
+// Separate component for Exchange card selection
+function ExchangeCardSelection() {
+  const socket = useGameStore(state => state.socket);
+  const gameId = useGameStore(state => state.gameId);
+  const playerId = useGameStore(state => state.playerId);
+  const actionInProgress = useGameStore(state => state.actionInProgress);
+
+  const [selectedIndices, setSelectedIndices] = useState([]);
+
+  const cards = actionInProgress?.exchangeCards || [];
+  const mustKeep = actionInProgress?.mustKeep || 2;
+
+  const handleToggleCard = (index) => {
+    if (selectedIndices.includes(index)) {
+      setSelectedIndices(selectedIndices.filter(i => i !== index));
+    } else if (selectedIndices.length < mustKeep) {
+      setSelectedIndices([...selectedIndices, index]);
+    }
+  };
+
+  const handleConfirm = () => {
+    if (selectedIndices.length !== mustKeep) {
+      alert(`You must select exactly ${mustKeep} cards`);
+      return;
+    }
+
+    socket.emit('selectCards', { gameId, playerId, selectedIndices }, (response) => {
+      if (!response.success) {
+        alert(response.message);
+      }
+    });
+  };
+
+  return (
+    <div className="challenge-panel exchange-selection">
+      <h3>Select {mustKeep} Cards to Keep</h3>
+      <p>Selected: {selectedIndices.length}/{mustKeep}</p>
+      <div className="exchange-cards">
+        {cards.map((card, idx) => (
+          <button
+            key={idx}
+            onClick={() => handleToggleCard(idx)}
+            className={`exchange-card-btn ${
+              selectedIndices.includes(idx) ? 'selected' : ''
+            }`}
+          >
+            {card}
+          </button>
+        ))}
+      </div>
+      <button 
+        onClick={handleConfirm}
+        disabled={selectedIndices.length !== mustKeep}
+        className="confirm-btn"
+      >
+        Confirm Selection
+      </button>
+    </div>
+  );
+}
+```
+
+This handles all challenge, block, and reveal interactions!
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 17: Create Game Log Component and Common Components
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create the game log component and common reusable components.
+
+1. Create `client/src/components/Game/GameLog.jsx`:
+
+```javascript
+import { useEffect, useRef } from 'react';
+import { useGameStore } from '../../store/gameStore';
+
+export const GameLog = () => {
+  const actionHistory = useGameStore(state => state.actionHistory);
+  const logRef = useRef(null);
+
+  useEffect(() => {
+    // Auto-scroll to bottom when new actions are added
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight;
+    }
+  }, [actionHistory]);
+
+  return (
+    <div className="game-log">
+      <h3>Game Log</h3>
+      <div className="log-content" ref={logRef}>
+        {actionHistory.length === 0 ? (
+          <p className="log-empty">Game starting...</p>
+        ) : (
+          actionHistory.map((entry, idx) => (
+            <div key={idx} className={`log-entry ${entry.result}`}>
+              <span className="log-player">{entry.player}</span>
+              <span className="log-action">{entry.action}</span>
+              {entry.target && <span className="log-target">→ {entry.target}</span>}
+              <span className="log-result">{entry.details}</span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+```
+
+2. Create `client/src/components/Common/Button.jsx`:
+
+```javascript
+export const Button = ({ 
+  children, 
+  onClick, 
+  disabled = false, 
+  variant = 'default',
+  className = '' 
+}) => {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`btn btn-${variant} ${className} ${disabled ? 'disabled' : ''}`}
+    >
+      {children}
+    </button>
+  );
+};
+```
+
+3. Create `client/src/components/Common/Card.jsx`:
+
+```javascript
+export const Card = ({ type, revealed, onClick, selectable = false }) => {
+  const getCardColor = (type) => {
+    const colors = {
+      Duke: '#2196F3',
+      Assassin: '#f44336',
+      Captain: '#4CAF50',
+      Ambassador: '#9C27B0',
+      Contessa: '#FF9800'
+    };
+    return colors[type] || '#666';
+  };
+
+  return (
+    <div 
+      className={`card-component ${revealed ? 'revealed' : ''} ${selectable ? 'selectable' : ''}`}
+      onClick={onClick}
+      style={{ borderColor: revealed ? getCardColor(type) : '#333' }}
+    >
+      <div className="card-emoji">{revealed ? '💀' : '🎴'}</div>
+      <div className="card-type" style={{ color: revealed ? getCardColor(type) : '#333' }}>
+        {revealed ? type : 'Hidden'}
+      </div>
+    </div>
+  );
+};
+```
+
+These complete the UI components!
+═══════════════════════════════════════════════════════════════════════════
+
+================================================================================
+PHASE 5: STYLING & POLISH
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────
+TASK 18: Create Global CSS Styles
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create the global CSS styles for the application.
+
+Create `client/src/styles/global.css`:
+
+```css
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  color: #333;
+}
+
+.app {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* Landing Page */
+.landing-page {
+  max-width: 800px;
+  margin: 50px auto;
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.landing-page h1 {
+  text-align: center;
+  font-size: 3em;
+  color: #764ba2;
+  margin-bottom: 40px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.lobby-options {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.divider {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #999;
+}
+
+.create-room, .join-room {
+  flex: 1;
+}
+
+.create-room h2, .join-room h2 {
+  margin-bottom: 20px;
+  color: #667eea;
+}
+
+.create-room form, .join-room form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+input[type="text"] {
+  padding: 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+button {
+  padding: 12px 24px;
+  border: 2px solid #333;
+  background: white;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+button:hover:not(:disabled) {
+  background: #f0f0f0;
+  transform: scale(1.05);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #e0e0e0;
+}
+
+.error {
+  color: #f44336;
+  font-size: 14px;
+  margin: 10px 0;
+}
+
+/* Lobby Waiting */
+.lobby-waiting {
+  max-width: 600px;
+  margin: 50px auto;
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+.lobby-waiting h2 {
+  color: #764ba2;
+  margin-bottom: 20px;
+}
+
+.start-game-btn {
+  margin-top: 30px;
+  background: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.start-game-btn:hover {
+  background: #45a049;
+}
+
+/* Game Over */
+.game-over {
+  max-width: 600px;
+  margin: 100px auto;
+  background: white;
+  padding: 60px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+.game-over h1 {
+  font-size: 3em;
+  color: #4CAF50;
+  margin-bottom: 20px;
+}
+
+.game-over h2 {
+  font-size: 2em;
+  color: #764ba2;
+  margin-bottom: 40px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .lobby-options {
+    flex-direction: column;
+  }
+  
+  .divider {
+    transform: rotate(90deg);
+  }
+}
+```
+
+This provides the base styling for the entire application!
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 19: Create Game Board CSS Styles
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Create the CSS styles for the game board and components.
+
+Create `client/src/styles/game.css`:
+
+```css
+/* Game Board Layout */
+.game-board {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.game-header {
+  text-align: center;
+  padding: 20px;
+  border-bottom: 3px solid #667eea;
+  margin-bottom: 20px;
+}
+
+.game-header h2 {
+  color: #764ba2;
+  font-size: 2em;
+}
+
+.game-content {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  min-height: 600px;
+}
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.main-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Player List */
+.player-list {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #ddd;
+}
+
+.player-list h3 {
+  margin-bottom: 15px;
+  color: #667eea;
+  font-size: 1.3em;
+}
+
+.player-item {
+  background: white;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+  transition: all 0.3s;
+}
+
+.player-item.active {
+  border-color: #4CAF50;
+  background: #e8f5e9;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.player-item.eliminated {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.player-item.you {
+  border-color: #764ba2;
+  background: #f3e5f5;
+}
+
+.player-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.player-name {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.disconnected {
+  color: #f44336;
+  font-size: 0.9em;
+}
+
+.player-stats {
+  display: flex;
+  gap: 15px;
+  font-size: 1.2em;
+  margin-bottom: 8px;
+}
+
+.player-cards {
+  display: flex;
+  gap: 5px;
+  font-size: 1.1em;
+}
+
+/* Player Hand */
+.player-hand {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #764ba2;
+}
+
+.player-hand h3 {
+  margin-bottom: 15px;
+  color: #764ba2;
+}
+
+.cards-container {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.card {
+  width: 150px;
+  height: 200px;
+  background: white;
+  border: 3px solid #333;
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: transform 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card.revealed {
+  border-color: #f44336;
+  background: #ffebee;
+  opacity: 0.7;
+}
+
+.card-emoji {
+  font-size: 4em;
+  margin-bottom: 10px;
+}
+
+.card-type {
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+}
+
+.reveal-prompt {
+  text-align: center;
+  margin-top: 15px;
+  color: #f44336;
+  font-weight: bold;
+  font-size: 1.2em;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Action Buttons */
+.action-buttons {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #ddd;
+}
+
+.action-buttons h3 {
+  margin-bottom: 15px;
+  color: #667eea;
+}
+
+.must-coup {
+  background: #fff3cd;
+  border: 2px solid #ff9800;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.action-btn {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 100px;
+  border: 2px solid #333;
+  background: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.action-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.action-btn.required {
+  background: #fff3cd;
+  border-color: #ff9800;
+  animation: attention 1s infinite;
+}
+
+@keyframes attention {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.action-name {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.action-desc {
+  font-size: 0.9em;
+  color: #666;
+  text-align: center;
+}
+
+/* Target Selection */
+.target-selection {
+  text-align: center;
+}
+
+.target-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.target-btn {
+  padding: 15px;
+  border: 2px solid #333;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.target-btn:hover {
+  background: #f0f0f0;
+}
+
+.target-btn.selected {
+  background: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.target-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* Challenge Panel */
+.challenge-panel {
+  background: #fff3cd;
+  border: 3px solid #ff9800;
+  padding: 20px;
+  border-radius: 12px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.panel-header h3 {
+  color: #ff6f00;
+}
+
+.timer {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #f44336;
+  background: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.challenge-btn {
+  background: #f44336;
+  color: white;
+  border-color: #f44336;
+}
+
+.challenge-btn:hover:not(:disabled) {
+  background: #d32f2f;
+}
+
+.block-btn {
+  background: #2196F3;
+  color: white;
+  border-color: #2196F3;
+}
+
+.block-btn:hover:not(:disabled) {
+  background: #1976D2;
+}
+
+.pass-btn {
+  background: #9e9e9e;
+  color: white;
+  border-color: #9e9e9e;
+}
+
+.pass-btn:hover:not(:disabled) {
+  background: #757575;
+}
+
+.confirm-btn {
+  background: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.cancel-btn {
+  background: #757575;
+  color: white;
+  border-color: #757575;
+}
+
+/* Reveal Panel */
+.reveal-panel {
+  background: #ffebee;
+  border-color: #f44336;
+}
+
+.reveal-cards {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.reveal-card-btn {
+  padding: 20px 30px;
+  font-size: 1.2em;
+  background: white;
+  border: 3px solid #f44336;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.reveal-card-btn:hover {
+  background: #f44336;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Exchange Selection */
+.exchange-selection {
+  background: #e1bee7;
+  border-color: #9C27B0;
+}
+
+.exchange-cards {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.exchange-card-btn {
+  padding: 20px 30px;
+  font-size: 1.2em;
+  background: white;
+  border: 3px solid #9C27B0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.exchange-card-btn:hover {
+  transform: scale(1.05);
+}
+
+.exchange-card-btn.selected {
+  background: #9C27B0;
+  color: white;
+}
+
+/* Game Log */
+.game-log {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #ddd;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-log h3 {
+  margin-bottom: 15px;
+  color: #667eea;
+}
+
+.log-content {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.log-empty {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+}
+
+.log-entry {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #ddd;
+  font-size: 0.95em;
+}
+
+.log-entry.success {
+  border-left-color: #4CAF50;
+}
+
+.log-entry.failed {
+  border-left-color: #f44336;
+}
+
+.log-entry.blocked {
+  border-left-color: #ff9800;
+}
+
+.log-player {
+  font-weight: bold;
+  color: #764ba2;
+}
+
+.log-action {
+  color: #667eea;
+  margin: 0 5px;
+}
+
+.log-target {
+  color: #f44336;
+  margin: 0 5px;
+}
+
+.log-result {
+  color: #666;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .game-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .actions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .cards-container {
+    flex-wrap: wrap;
+  }
+  
+  .card {
+    width: 120px;
+    height: 160px;
+  }
+  
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+}
+```
+
+All styling is complete!
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 20: Add Missing Helper Functions and Final Integration
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Add any missing helper functions and ensure all imports are correct.
+
+1. Create `server/utils/helpers.js`:
+
+```javascript
+// Utility helper functions
+
+export function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+export function generateRoomCode(length = 4) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+export function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+```
+
+2. Update `client/src/utils/constants.js`:
+
+```javascript
+export const CARD_TYPES = {
+  DUKE: "Duke",
+  ASSASSIN: "Assassin",
+  CAPTAIN: "Captain",
+  AMBASSADOR: "Ambassador",
+  CONTESSA: "Contessa"
+};
+
+export const ACTIONS = {
+  INCOME: "INCOME",
+  FOREIGN_AID: "FOREIGN_AID",
+  COUP: "COUP",
+  TAX: "TAX",
+  ASSASSINATE: "ASSASSINATE",
+  STEAL: "STEAL",
+  EXCHANGE: "EXCHANGE"
+};
+
+export const GAME_STATES = {
+  LOBBY: "LOBBY",
+  ACTIVE_TURN: "ACTIVE_TURN",
+  WAITING_CHALLENGE: "WAITING_CHALLENGE",
+  RESOLVING_CHALLENGE: "RESOLVING_CHALLENGE",
+  WAITING_BLOCK: "WAITING_BLOCK",
+  RESOLVING_BLOCK: "RESOLVING_BLOCK",
+  WAITING_BLOCK_CHALLENGE: "WAITING_BLOCK_CHALLENGE",
+  RESOLVING_ACTION: "RESOLVING_ACTION",
+  CHOOSING_INFLUENCE: "CHOOSING_INFLUENCE",
+  GAME_OVER: "GAME_OVER"
+};
+
+export const CHARACTER_COLORS = {
+  Duke: "#2196F3",
+  Assassin: "#f44336",
+  Captain: "#4CAF50",
+  Ambassador: "#9C27B0",
+  Contessa: "#FF9800"
+};
+```
+
+3. Update root `package.json` with scripts:
+
+```json
+{
+  "name": "coup-game",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "install:all": "npm install && npm install --workspace=client && npm install --workspace=server",
+    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\"",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+```
+
+4. Ensure all imports are using ES6 syntax and are correct.
+
+This completes all the helper functions and integrations!
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 21: Testing and Bug Fixes
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Test the application and fix any bugs.
+
+Follow these testing steps:
+
+1. Install all dependencies:
+```bash
+npm run install:all
+```
+
+2. Start the application:
+```bash
+npm run dev
+```
+
+3. Test the following scenarios:
+
+**Basic Flow:**
+- Create a room
+- Join with another browser/tab
+- Start the game
+- Verify both players have 2 coins and 2 cards
+
+**Actions:**
+- Test Income (should add 1 coin)
+- Test Foreign Aid (should add 2 coins)
+- Test Coup (should require 7 coins, target loses influence)
+- Test 10-coin forced Coup rule
+
+**Character Actions:**
+- Test Tax (claiming Duke)
+- Test Assassinate (claiming Assassin, costs 3 coins)
+- Test Steal (claiming Captain, takes 2 coins from target)
+- Test Exchange (claiming Ambassador, draw 2, keep 2)
+
+**Challenge System:**
+- Challenge a true claim (challenger should lose influence)
+- Challenge a bluff (claimer should lose influence, action fails)
+
+**Block System:**
+- Block Foreign Aid with Duke
+- Block Assassination with Contessa
+- Block Steal with Captain or Ambassador
+- Challenge a block
+
+**Edge Cases:**
+- Player with 0 coins being stolen from
+- Player with 1 card left losing influence (elimination)
+- Last player standing (win condition)
+- Ambassador with 1 card (should see 3 cards total, keep 1)
+
+4. Common bugs to fix:
+- Socket event listeners not properly cleaning up
+- State not updating after action
+- Challenge/block windows not timing out properly
+- Card reveal not working
+- Turn not advancing properly
+- Game state not syncing between players
+
+5. Use console.log statements to debug issues
+6. Check browser console for errors
+7. Check server console for backend errors
+
+Make fixes as needed and re-test until all scenarios work correctly.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 22: Add Error Handling and Edge Case Fixes
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Add comprehensive error handling and fix edge cases.
+
+1. Add error boundaries in React components
+2. Add try-catch blocks around all Socket.io emissions
+3. Add validation for all user inputs
+4. Handle disconnection/reconnection gracefully
+5. Add loading states for async operations
+6. Handle empty deck scenario (reshuffle discard pile)
+7. Handle eliminated player trying to take actions
+8. Handle targeting eliminated players
+9. Add timeout handling for challenge/block windows
+10. Add null checks for all player/game lookups
+11. Add better error messages for failed actions
+12. Add confirmation dialogs for important actions
+
+Test all error scenarios and ensure the app doesn't crash.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 23: Performance Optimization
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Optimize performance and add final polish.
+
+1. Add React.memo to components that don't need frequent re-renders
+2. Optimize Socket.io event emissions (debounce if needed)
+3. Add loading indicators for network requests
+4. Optimize CSS (remove unused styles)
+5. Add smooth transitions and animations
+6. Test with multiple players (4-6) to ensure smooth gameplay
+7. Profile the app for performance bottlenecks
+8. Optimize bundle size if needed
+9. Add hover effects and visual feedback
+10. Test on different screen sizes
+
+Make the game feel smooth and responsive!
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 24: Add Game Rules Help/Tutorial
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Add a help section explaining the game rules.
+
+Create `client/src/components/Common/HelpModal.jsx`:
+
+```javascript
+import { useState } from 'react';
+import '../../styles/help.css';
+
+export const HelpModal = () => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button className="help-btn" onClick={() => setIsOpen(true)}>
+        ❓ Rules
+      </button>
+
+      {isOpen && (
+        <div className="modal-overlay" onClick={() => setIsOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>How to Play Coup</h2>
+            
+            <section>
+              <h3>🎯 Objective</h3>
+              <p>Be the last player with influence (cards) remaining!</p>
+            </section>
+
+            <section>
+              <h3>💰 Basic Actions (Always Available)</h3>
+              <ul>
+                <li><strong>Income:</strong> Take 1 coin (cannot be challenged or blocked)</li>
+                <li><strong>Foreign Aid:</strong> Take 2 coins (can be blocked by Duke)</li>
+                <li><strong>Coup:</strong> Pay 7 coins, target loses 1 influence (cannot be challenged or blocked)</li>
+              </ul>
+              <p>⚠️ If you have 10+ coins, you MUST Coup!</p>
+            </section>
+
+            <section>
+              <h3>👤 Character Actions</h3>
+              <ul>
+                <li><strong>Duke - Tax:</strong> Take 3 coins</li>
+                <li><strong>Assassin - Assassinate:</strong> Pay 3 coins, target loses influence (can be blocked by Contessa)</li>
+                <li><strong>Captain - Steal:</strong> Take 2 coins from another player (can be blocked by Captain or Ambassador)</li>
+                <li><strong>Ambassador - Exchange:</strong> Draw 2 cards from deck, keep 2, return rest</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3>🎴 Character Blocks</h3>
+              <ul>
+                <li><strong>Duke:</strong> Can block Foreign Aid</li>
+                <li><strong>Captain:</strong> Can block Stealing</li>
+                <li><strong>Ambassador:</strong> Can block Stealing</li>
+                <li><strong>Contessa:</strong> Can block Assassination</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3>⚔️ Challenges</h3>
+              <p>When someone claims a character, you can challenge them!</p>
+              <ul>
+                <li>If they have the card: You lose influence, they get a new card</li>
+                <li>If they're bluffing: They lose influence, action fails</li>
+              </ul>
+              <p>You can also challenge blocks!</p>
+            </section>
+
+            <section>
+              <h3>💔 Losing Influence</h3>
+              <p>When you lose influence, you must reveal one of your cards. Revealed cards are out of play. Lose both cards and you're eliminated!</p>
+            </section>
+
+            <button onClick={() => setIsOpen(false)}>Close</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+```
+
+Add this component to the GameBoard and include styling in a new help.css file.
+═══════════════════════════════════════════════════════════════════════════
+
+────────────────────────────────────────────────────────────────────────────
+TASK 25: Final Testing and Deployment Preparation
+────────────────────────────────────────────────────────────────────────────
+
+COPY THIS PROMPT:
+═══════════════════════════════════════════════════════════════════════════
+Final testing and deployment preparation.
+
+1. **Complete Testing Checklist:**
+   - [ ] Can create and join rooms
+   - [ ] Game starts correctly with 2-6 players
+   - [ ] All 7 actions work correctly
+   - [ ] Challenge system works (both success and failure)
+   - [ ] Block system works (with and without challenges)
+   - [ ] Card reveal works
+   - [ ] Ambassador exchange works
+   - [ ] 10-coin forced Coup works
+   - [ ] Win condition triggers correctly
+   - [ ] Multiple games can run simultaneously
+   - [ ] Disconnection is handled gracefully
+   - [ ] UI is responsive and looks good
+   - [ ] No console errors
+
+2. **Create README.md:**
+   Add installation instructions, how to play, and technical details
+
+3. **Environment Variables:**
+   Create .env.example files for both client and server
+
+4. **Deployment Options:**
+   - Client: Vercel, Netlify, or GitHub Pages
+   - Server: Heroku, Railway, Render, or DigitalOcean
+   - Or both together on services like Render
+
+5. **Build Commands:**
+   ```bash
+   # Client
+   cd client && npm run build
+   
+   # Server  
+   cd server && npm start
+   ```
+
+6. **Update server CORS for production:**
+   Change origin to your deployed client URL
+
+7. **Test in production environment**
+
+Congratulations! Your Coup game is complete! 🎉
+═══════════════════════════════════════════════════════════════════════════
+
+================================================================================
+END OF TASK LIST
+================================================================================
+
+SUMMARY:
+- 25 tasks total
+- Organized into 5 phases
+- Each prompt is self-contained with full context
+- Copy-paste directly into Antigravity
+- Follow in order for best results
+
+Good luck building your Coup game!

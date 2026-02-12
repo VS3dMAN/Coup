@@ -1,0 +1,1154 @@
+================================================================================
+COUP - ONLINE MULTIPLAYER GAME
+PRODUCT REQUIREMENTS DOCUMENT (PRD)
+================================================================================
+
+VERSION: 1.0
+DATE: February 11, 2026
+STATUS: Development Ready
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+1. Product Overview
+2. Complete Game Rules & Mechanics
+3. Characters & Actions Reference
+4. Game Flow & State Machine
+5. Technical Architecture
+6. Technology Stack & Libraries
+7. Data Models & Structure
+8. UI/UX Specifications
+9. Implementation Roadmap
+10. Edge Cases & Special Rules
+
+================================================================================
+1. PRODUCT OVERVIEW
+================================================================================
+
+1.1 PURPOSE
+Web-based real-time multiplayer implementation of Coup - a social deduction 
+and bluffing card game where players compete to be the last one standing.
+
+1.2 CORE FEATURES
+- Real-time multiplayer (2-6 players)
+- Room creation and joining system
+- Full Coup ruleset implementation
+- Challenge and counteraction mechanics
+- Turn-based gameplay with state synchronization
+- Simple button-based UI (CSS-only styling)
+
+1.3 TECHNICAL SCOPE
+- Frontend: React.js with CSS modules
+- Backend: Node.js with Socket.io for real-time communication
+- State Management: Zustand
+- No database initially (in-memory game state)
+
+================================================================================
+2. COMPLETE GAME RULES & MECHANICS
+================================================================================
+
+2.1 GAME SETUP
+--------------
+PLAYERS: 2-6 players required
+
+STARTING RESOURCES (per player):
+- 2 coins from treasury
+- 2 character cards (dealt randomly, face-down, secret)
+- 2 influence points (1 per card)
+
+DECK COMPOSITION (15 cards total):
+- 3x Duke
+- 3x Assassin  
+- 3x Captain
+- 3x Ambassador
+- 3x Contessa
+
+TREASURY: Unlimited coin pool (separate from player coins)
+
+2.2 WIN CONDITION
+-----------------
+Last player with at least 1 influence (character card) remaining wins.
+
+2.3 INFLUENCE SYSTEM
+--------------------
+- Each character card = 1 influence
+- When you lose influence, you must reveal one of your character cards
+- Revealed cards are out of play permanently
+- When both cards are revealed, you are eliminated from the game
+- Players choose which card to reveal when losing influence
+
+2.4 TURN STRUCTURE
+------------------
+On your turn, you MUST take exactly ONE action:
+
+GENERAL ACTIONS (Available to all players, cannot be blocked/challenged):
+1. INCOME
+   - Take 1 coin from treasury
+   - Cannot be blocked or challenged
+   
+2. FOREIGN AID
+   - Take 2 coins from treasury
+   - Can be BLOCKED by Duke
+   - Cannot be challenged
+   
+3. COUP
+   - Pay 7 coins to treasury
+   - Choose a player to lose influence
+   - Target must reveal a card
+   - Cannot be blocked or challenged
+   - MANDATORY if you start turn with 10+ coins
+
+CHARACTER ACTIONS (Require claiming to have the character):
+4. TAX (Duke)
+   - Take 3 coins from treasury
+   - Can be CHALLENGED
+   
+5. ASSASSINATE (Assassin)
+   - Pay 3 coins to treasury
+   - Choose a player to lose influence
+   - Can be BLOCKED by Contessa
+   - Can be CHALLENGED
+   
+6. STEAL (Captain)
+   - Take 2 coins from another player
+   - If they have <2 coins, take all they have
+   - Can be BLOCKED by Captain or Ambassador
+   - Can be CHALLENGED
+   
+7. EXCHANGE (Ambassador)
+   - Draw 2 cards from deck
+   - Look at them + your current cards
+   - Choose 2 to keep, return rest to deck
+   - Can be CHALLENGED
+   - Cannot be blocked
+
+2.5 CHALLENGE SYSTEM
+--------------------
+When a player claims a character action, ANY other player can CHALLENGE:
+
+CHALLENGE FLOW:
+1. Active player claims character action (e.g., "I have Duke, taking Tax")
+2. Any opponent may declare "I challenge"
+3. Multiple challenges can occur, but only first challenger matters
+4. Active player must prove or fold:
+
+   IF ACTIVE PLAYER HAS THE CARD:
+   - Active player reveals the claimed character card
+   - Challenger loses 1 influence (reveals a card of their choice)
+   - Revealed card goes to discard
+   - Active player shuffles revealed card back into deck
+   - Active player draws a new card from deck
+   - Action proceeds successfully
+   
+   IF ACTIVE PLAYER DOES NOT HAVE THE CARD (was bluffing):
+   - Active player loses 1 influence (reveals a card)
+   - Action fails and does not resolve
+   - No coins/cards are exchanged
+
+CHALLENGE TIMING:
+- Challenges must be declared BEFORE action resolves
+- Once action starts resolving, no challenges allowed
+- You cannot challenge Income, Foreign Aid, or Coup
+- You can only challenge character claims
+
+2.6 BLOCK/COUNTERACTION SYSTEM
+-------------------------------
+Some actions can be BLOCKED by claiming certain characters:
+
+BLOCKABLE ACTIONS:
+- Foreign Aid → Can be blocked by Duke
+- Assassination → Can be blocked by Contessa
+- Stealing → Can be blocked by Captain OR Ambassador
+
+BLOCK FLOW:
+1. Active player declares action
+2. (Optional) Challenge on the action claim
+3. Target or any player declares "I block with [Character]"
+4. (Optional) Challenge on the block claim
+5. If block succeeds, action is canceled
+
+BLOCK CHALLENGE MECHANICS:
+- Blocking player claims a character to block
+- Active player OR any other player can challenge the block
+- Challenge resolution same as action challenges:
+  * If blocker has card: challenger loses influence, block succeeds
+  * If blocker doesn't have card: blocker loses influence, action proceeds
+  
+IMPORTANT: Both the action AND the block can be challenged independently
+
+2.7 SPECIAL RULES
+-----------------
+10-COIN RULE:
+- If you start your turn with 10+ coins, you MUST Coup
+- No other action is allowed
+- This prevents infinite coin accumulation
+
+CARD EXCHANGE RULE:
+- When Ambassador exchanges, they see 2 + their current cards
+- If Ambassador has 2 cards: see 4 cards total, keep 2
+- If Ambassador has 1 card: see 3 cards total, keep 1
+
+COIN STEALING RULES:
+- Cannot steal from a player with 0 coins
+- If target has 1 coin, steal 1 coin
+- If target has 2+ coins, steal 2 coins
+
+LAST PLAYER STANDING:
+- Game ends immediately when one player remains with influence
+- Players eliminated mid-turn still count as eliminated
+
+REVEAL CHOICE:
+- When losing influence, player chooses which card to reveal
+- Other players do not see unrevealed cards
+
+================================================================================
+3. CHARACTERS & ACTIONS REFERENCE
+================================================================================
+
+CHARACTER: DUKE
+---------------
+ACTIONS:
+- TAX: Take 3 coins from treasury
+  * Can be challenged
+  * Cannot be blocked
+  
+BLOCKS:
+- Can block Foreign Aid
+  * Prevents target from taking 2 coins
+  * Can be challenged
+
+CHARACTER: ASSASSIN
+-------------------
+ACTIONS:
+- ASSASSINATE: Pay 3 coins, target player loses 1 influence
+  * Can be challenged
+  * Can be blocked by Contessa
+  
+BLOCKS:
+- None
+
+CHARACTER: CAPTAIN
+------------------
+ACTIONS:
+- STEAL: Take 2 coins from another player
+  * Can be challenged
+  * Can be blocked by Captain or Ambassador
+  
+BLOCKS:
+- Can block Stealing (Captain's steal)
+  * Prevents coins from being stolen from you
+  * Can be challenged
+
+CHARACTER: AMBASSADOR
+---------------------
+ACTIONS:
+- EXCHANGE: Draw 2 cards, keep 2 total, return rest
+  * Can be challenged
+  * Cannot be blocked
+  
+BLOCKS:
+- Can block Stealing (Captain's steal)
+  * Prevents coins from being stolen from you
+  * Can be challenged
+
+CHARACTER: CONTESSA
+-------------------
+ACTIONS:
+- None (only blocks)
+
+BLOCKS:
+- Can block Assassination (Assassin's assassinate)
+  * Prevents losing influence from assassination
+  * Can be challenged
+
+================================================================================
+4. GAME FLOW & STATE MACHINE
+================================================================================
+
+4.1 GAME STATES
+---------------
+LOBBY - Waiting for players to join
+STARTING - Game is initializing
+ACTIVE_TURN - A player is taking their turn
+WAITING_CHALLENGE - Window for challenges on action
+RESOLVING_CHALLENGE - Challenge is being resolved
+WAITING_BLOCK - Window for blocks on action
+RESOLVING_BLOCK - Block is being resolved
+WAITING_BLOCK_CHALLENGE - Window for challenges on block
+RESOLVING_BLOCK_CHALLENGE - Block challenge being resolved
+RESOLVING_ACTION - Action is executing
+CHOOSING_INFLUENCE - Player choosing which card to reveal
+GAME_OVER - Winner declared
+
+4.2 TURN FLOW DIAGRAM
+----------------------
+START TURN
+    ↓
+[Check 10+ coins → Force Coup if true]
+    ↓
+Player selects action
+    ↓
+[If challengeable action]
+    ↓
+Wait for challenge (5-10 second window)
+    ↓
+├─[No challenge] → Continue
+└─[Challenge declared]
+        ↓
+    Resolve challenge
+        ↓
+    ├─[Challenger correct] → Action fails, lose influence
+    └─[Challenger wrong] → Challenger loses influence, continue
+        ↓
+[If blockable action]
+    ↓
+Wait for block (5-10 second window)
+    ↓
+├─[No block] → Continue
+└─[Block declared]
+        ↓
+    Wait for block challenge (5-10 second window)
+        ↓
+    ├─[No challenge] → Action blocked
+    └─[Challenge declared]
+            ↓
+        Resolve block challenge
+            ↓
+        ├─[Block succeeds] → Action blocked
+        └─[Block fails] → Continue to action
+            ↓
+Execute action (coins, influence, cards)
+    ↓
+Check for eliminated players
+    ↓
+Check win condition
+    ↓
+Next player's turn
+
+4.3 ACTION RESOLUTION LOGIC
+----------------------------
+INCOME:
+- treasury -= 1
+- currentPlayer.coins += 1
+- Next turn
+
+FOREIGN AID:
+- Wait for Duke blocks
+- If not blocked:
+  * treasury -= 2
+  * currentPlayer.coins += 2
+- Next turn
+
+COUP:
+- currentPlayer.coins -= 7
+- treasury += 7
+- targetPlayer enters CHOOSING_INFLUENCE state
+- targetPlayer reveals 1 card
+- Check if targetPlayer eliminated
+- Next turn
+
+TAX (Duke):
+- Wait for challenges
+- If not successfully challenged:
+  * treasury -= 3
+  * currentPlayer.coins += 3
+- Next turn
+
+ASSASSINATE (Assassin):
+- currentPlayer.coins -= 3
+- treasury += 3
+- Wait for challenges
+- Wait for Contessa blocks
+- If not blocked or challenge failed:
+  * targetPlayer enters CHOOSING_INFLUENCE state
+  * targetPlayer reveals 1 card
+  * Check if targetPlayer eliminated
+- Next turn
+
+STEAL (Captain):
+- Wait for challenges
+- Wait for Captain/Ambassador blocks
+- If not blocked or challenge failed:
+  * amount = min(2, targetPlayer.coins)
+  * targetPlayer.coins -= amount
+  * currentPlayer.coins += amount
+- Next turn
+
+EXCHANGE (Ambassador):
+- Wait for challenges
+- If not successfully challenged:
+  * Draw 2 cards from deck
+  * Player sees: drawnCards + currentCards
+  * Player selects 2 cards to keep
+  * Return rest to deck
+  * Shuffle deck
+- Next turn
+
+4.4 CHALLENGE RESOLUTION LOGIC
+-------------------------------
+When challenge declared:
+1. Identify claimer (player who claimed character)
+2. Identify challenger
+3. Check if claimer has claimed character in hand
+4. IF YES:
+   - Claimer reveals card
+   - Challenger loses influence
+   - Shuffle revealed card back to deck
+   - Claimer draws new card
+   - Action proceeds
+5. IF NO:
+   - Claimer loses influence
+   - Action fails (no execution)
+6. Update game state
+7. Continue turn flow
+
+4.5 INFLUENCE LOSS LOGIC
+-------------------------
+When player must lose influence:
+1. Player enters CHOOSING_INFLUENCE state
+2. Player selects one of their unrevealed cards
+3. Card is revealed to all players
+4. Card moves to revealed/discard pile
+5. Player.influence -= 1
+6. IF Player.influence == 0:
+   - Player.eliminated = true
+   - Remove from turn order
+   - Check win condition
+7. Continue game flow
+
+================================================================================
+5. TECHNICAL ARCHITECTURE
+================================================================================
+
+5.1 SYSTEM ARCHITECTURE
+-----------------------
+CLIENT (Browser)
+    ↕ WebSocket (Socket.io)
+SERVER (Node.js)
+    ↕ In-Memory State
+
+ARCHITECTURE PATTERN: Client-Server with Authoritative Server
+
+- Server holds authoritative game state
+- Clients send actions as events
+- Server validates and processes actions
+- Server broadcasts state updates to all clients
+- Clients render UI based on received state
+
+5.2 COMPONENT STRUCTURE
+-----------------------
+CLIENT COMPONENTS:
+/src
+  /components
+    /Game
+      - GameBoard.jsx (main game container)
+      - PlayerHand.jsx (your cards)
+      - PlayerList.jsx (all players, coins, influence)
+      - ActionButtons.jsx (Income, Foreign Aid, etc.)
+      - ChallengePanel.jsx (Challenge/Block UI)
+      - GameLog.jsx (action history)
+    /Lobby
+      - RoomList.jsx
+      - CreateRoom.jsx
+      - JoinRoom.jsx
+    /Common
+      - Button.jsx
+      - Card.jsx
+      - CoinDisplay.jsx
+  /styles
+    - game.css
+    - lobby.css
+    - common.css
+  /hooks
+    - useSocket.js
+    - useGameState.js
+  /utils
+    - gameLogic.js (client-side validation)
+    - constants.js
+
+SERVER STRUCTURE:
+/server
+  - server.js (main entry point)
+  - gameManager.js (manages multiple game rooms)
+  - gameLogic.js (core game rules)
+  - gameState.js (state management)
+  - socketHandlers.js (Socket.io events)
+  /models
+    - Game.js
+    - Player.js
+    - Card.js
+
+5.3 DATA FLOW
+-------------
+USER ACTION:
+1. User clicks button (e.g., "Take Tax")
+2. Client emits Socket event: { type: 'ACTION', action: 'TAX' }
+3. Server receives event
+4. Server validates action
+5. Server updates authoritative state
+6. Server broadcasts state update to all clients
+7. Clients update UI based on new state
+
+REAL-TIME SYNC:
+- Server emits 'gameStateUpdate' on every change
+- Clients listen and re-render
+- Optimistic updates NOT recommended (server is authority)
+
+================================================================================
+6. TECHNOLOGY STACK & LIBRARIES
+================================================================================
+
+6.1 FRONTEND
+------------
+FRAMEWORK:
+- React 18+ (npm install react react-dom)
+  * Component-based UI
+  * Hooks for state management
+  * Fast re-rendering
+
+STATE MANAGEMENT:
+- Zustand (npm install zustand)
+  * Lightweight Redux alternative
+  * Simple API
+  * Good for game state
+  
+ALTERNATIVE: Redux Toolkit (if you prefer)
+
+STYLING:
+- Plain CSS (CSS Modules or styled-components)
+  * No framework needed initially
+  * Button-focused UI
+  * Simple layouts
+
+REAL-TIME:
+- Socket.io-client (npm install socket.io-client)
+  * WebSocket abstraction
+  * Automatic reconnection
+  * Event-based communication
+
+BUILD TOOL:
+- Vite (npm create vite@latest)
+  * Fast dev server
+  * Hot module replacement
+  * Modern build tool
+
+6.2 BACKEND
+-----------
+RUNTIME:
+- Node.js 18+ LTS
+
+FRAMEWORK:
+- Express.js (npm install express)
+  * Web server
+  * REST API for lobbies
+  * Middleware support
+
+REAL-TIME:
+- Socket.io (npm install socket.io)
+  * WebSocket server
+  * Room management
+  * Event broadcasting
+
+UTILITIES:
+- uuid (npm install uuid)
+  * Generate unique game/player IDs
+
+- lodash (npm install lodash)
+  * Array shuffling for deck
+  * Utility functions
+
+6.3 DEVELOPMENT TOOLS
+---------------------
+- nodemon (npm install -D nodemon)
+  * Auto-restart server on changes
+
+- concurrently (npm install -D concurrently)
+  * Run client + server simultaneously
+
+- ESLint + Prettier
+  * Code quality
+
+6.4 OPTIONAL ENHANCEMENTS (Future)
+-----------------------------------
+- Database: MongoDB or PostgreSQL (game history, stats)
+- Authentication: JWT (user accounts)
+- Deployment: Docker, AWS/Heroku
+- Testing: Jest, React Testing Library
+
+================================================================================
+7. DATA MODELS & STRUCTURE
+================================================================================
+
+7.1 GAME STATE MODEL
+--------------------
+{
+  gameId: "uuid-string",
+  roomCode: "ABCD",
+  status: "LOBBY | ACTIVE | FINISHED",
+  players: [
+    {
+      id: "player-uuid",
+      name: "PlayerName",
+      socketId: "socket-id",
+      coins: 2,
+      cards: [
+        { type: "Duke", revealed: false },
+        { type: "Captain", revealed: false }
+      ],
+      influence: 2,
+      isAlive: true,
+      isReady: false
+    }
+  ],
+  currentPlayerIndex: 0,
+  deck: ["Duke", "Assassin", "Captain", ...],
+  discardPile: [],
+  gameState: "ACTIVE_TURN | WAITING_CHALLENGE | ...",
+  actionInProgress: {
+    type: "TAX | ASSASSINATE | STEAL | ...",
+    actingPlayer: "player-uuid",
+    targetPlayer: "player-uuid | null",
+    challengeWindow: true,
+    blockWindow: false,
+    pendingChallenges: [],
+    pendingBlocks: []
+  },
+  actionHistory: [
+    {
+      timestamp: "ISO-8601",
+      player: "PlayerName",
+      action: "TAX",
+      result: "success | challenged | blocked"
+    }
+  ],
+  winner: null,
+  createdAt: "timestamp",
+  turnTimer: 30
+}
+
+7.2 PLAYER MODEL
+----------------
+{
+  id: "uuid",
+  name: "string",
+  socketId: "string",
+  coins: number (0-inf),
+  cards: [
+    { 
+      type: "Duke | Assassin | Captain | Ambassador | Contessa",
+      revealed: boolean 
+    }
+  ],
+  influence: number (0-2),
+  isAlive: boolean,
+  isReady: boolean (lobby only),
+  isConnected: boolean
+}
+
+7.3 CARD TYPES
+--------------
+const CARD_TYPES = {
+  DUKE: "Duke",
+  ASSASSIN: "Assassin",
+  CAPTAIN: "Captain",
+  AMBASSADOR: "Ambassador",
+  CONTESSA: "Contessa"
+};
+
+7.4 ACTION TYPES
+----------------
+const ACTIONS = {
+  INCOME: "INCOME",
+  FOREIGN_AID: "FOREIGN_AID",
+  COUP: "COUP",
+  TAX: "TAX",
+  ASSASSINATE: "ASSASSINATE",
+  STEAL: "STEAL",
+  EXCHANGE: "EXCHANGE"
+};
+
+7.5 SOCKET EVENTS
+-----------------
+CLIENT → SERVER:
+- 'createRoom' → { playerName }
+- 'joinRoom' → { roomCode, playerName }
+- 'playerReady' → { gameId, playerId }
+- 'startGame' → { gameId }
+- 'takeAction' → { gameId, action, targetPlayerId? }
+- 'challenge' → { gameId }
+- 'block' → { gameId, blockingCharacter }
+- 'challengeBlock' → { gameId }
+- 'revealCard' → { gameId, cardIndex }
+- 'selectCards' → { gameId, cardIndices } (for Exchange)
+- 'disconnect' → automatic
+
+SERVER → CLIENT:
+- 'roomCreated' → { roomCode, gameId }
+- 'playerJoined' → { player }
+- 'gameStateUpdate' → { gameState }
+- 'actionRequired' → { type: 'challenge | block | reveal | select' }
+- 'gameStarted' → { gameState }
+- 'gameOver' → { winner }
+- 'error' → { message }
+- 'playerDisconnected' → { playerId }
+
+================================================================================
+8. UI/UX SPECIFICATIONS
+================================================================================
+
+8.1 UI PRINCIPLES
+-----------------
+- Button-focused interactions (no drag-drop initially)
+- Clear visual hierarchy
+- Immediate feedback on actions
+- Mobile-responsive (but desktop-first)
+- Simple color scheme (avoid over-design)
+
+8.2 SCREEN LAYOUTS
+------------------
+
+LOBBY SCREEN:
++------------------------------------------+
+|  COUP - Online                           |
+|  Room Code: ABCD          [Copy]         |
++------------------------------------------+
+|  Players (2/6):                          |
+|  ✓ Player1 (You)         [Ready]         |
+|    Player2               [Waiting...]    |
++------------------------------------------+
+|  [Start Game] (host only)                |
++------------------------------------------+
+
+GAME SCREEN:
++------------------------------------------+
+|  Players:                                |
+|  ▶ Player1: 💰x5  ❤️❤️                   |
+|    Player2: 💰x3  ❤️                     |
+|    Player3: 💰x7  ❤️❤️                   |
++------------------------------------------+
+|  Your Cards:                             |
+|  [🎴 Duke]    [🎴 Hidden]                |
++------------------------------------------+
+|  Actions:                                |
+|  [Income +1]  [Foreign Aid +2]  [Coup -7]|
+|  [Tax +3]  [Assassinate -3]  [Steal]     |
+|  [Exchange]                              |
++------------------------------------------+
+|  Challenge/Block:                        |
+|  Player2 used TAX                        |
+|  [Challenge]  [Pass]                     |
++------------------------------------------+
+|  Game Log:                               |
+|  Player1 took Income (+1 coin)           |
+|  Player2 used Tax (+3 coins)             |
++------------------------------------------+
+
+8.3 BUTTON STATES
+-----------------
+DEFAULT:
+- border: 2px solid #333
+- background: #fff
+- padding: 10px 20px
+- cursor: pointer
+
+HOVER:
+- background: #f0f0f0
+
+DISABLED:
+- opacity: 0.5
+- cursor: not-allowed
+- background: #e0e0e0
+
+ACTIVE (your turn):
+- border: 2px solid #4CAF50
+- background: #e8f5e9
+
+SELECTED:
+- background: #4CAF50
+- color: white
+
+8.4 COLOR SCHEME
+----------------
+CHARACTERS:
+- Duke: Blue (#2196F3)
+- Assassin: Red (#f44336)
+- Captain: Green (#4CAF50)
+- Ambassador: Purple (#9C27B0)
+- Contessa: Orange (#FF9800)
+
+GAME STATES:
+- Your turn: Green highlight
+- Waiting: Gray
+- Challenge window: Yellow highlight
+- Block window: Orange highlight
+- Eliminated: Red strikethrough
+
+8.5 RESPONSIVE BREAKPOINTS
+---------------------------
+Desktop: 1024px+ (primary target)
+Tablet: 768px-1023px
+Mobile: 320px-767px (stretch goal)
+
+8.6 VISUAL FEEDBACK
+-------------------
+ANIMATIONS (CSS only):
+- Button hover: transform: scale(1.05)
+- Card reveal: flip animation
+- Coin transfer: brief highlight
+- Eliminated player: fade out
+
+NOTIFICATIONS:
+- Toast messages for important events
+- Challenge windows with countdown timers
+- Sound effects (optional, future)
+
+================================================================================
+9. IMPLEMENTATION ROADMAP
+================================================================================
+
+9.1 PHASE 1: CORE MECHANICS (Week 1-2)
+---------------------------------------
+BACKEND:
+✓ Set up Node.js + Express server
+✓ Implement Socket.io
+✓ Create Game and Player models
+✓ Implement turn system
+✓ Implement basic actions (Income, Coup)
+✓ Implement card distribution
+✓ Implement influence system
+
+FRONTEND:
+✓ Set up React + Vite
+✓ Create basic game board layout
+✓ Implement player list display
+✓ Create action buttons
+✓ Implement card display
+✓ Socket.io client connection
+
+9.2 PHASE 2: ADVANCED MECHANICS (Week 3)
+-----------------------------------------
+✓ Implement challenge system
+✓ Implement block system
+✓ Add all character actions
+✓ Add 10-coin forced Coup rule
+✓ Implement Ambassador card exchange
+✓ Add game state validation
+
+9.3 PHASE 3: LOBBY & MULTIPLAYER (Week 4)
+------------------------------------------
+✓ Create lobby system
+✓ Room creation/joining
+✓ Player ready system
+✓ Handle disconnections
+✓ Reconnection logic
+✓ Game start logic
+
+9.4 PHASE 4: POLISH & UX (Week 5)
+----------------------------------
+✓ Add action history/log
+✓ Improve CSS styling
+✓ Add animations
+✓ Timer system for actions
+✓ Challenge/block countdown
+✓ Better error handling
+✓ Add tooltips/help text
+
+9.5 PHASE 5: TESTING & DEPLOYMENT (Week 6)
+-------------------------------------------
+✓ End-to-end testing
+✓ Bug fixes
+✓ Performance optimization
+✓ Deploy to hosting (Heroku/Railway/Render)
+✓ Documentation
+
+9.6 FUTURE ENHANCEMENTS
+-----------------------
+- User accounts & authentication
+- Game history & statistics
+- ELO ranking system
+- Spectator mode
+- Chat system
+- Custom game rules/variants
+- AI bot opponents
+- Mobile app (React Native)
+- Voice chat integration
+
+================================================================================
+10. EDGE CASES & SPECIAL RULES
+================================================================================
+
+10.1 COIN EDGE CASES
+--------------------
+INSUFFICIENT COINS:
+- Cannot Coup with <7 coins (button disabled)
+- Cannot Assassinate with <3 coins (button disabled)
+- Can steal from player with 0 coins (get 0 coins)
+
+COIN LIMITS:
+- No maximum coin limit
+- 10+ coins forces Coup (cannot defer)
+
+10.2 CARD EDGE CASES
+--------------------
+EMPTY DECK:
+- If deck empty during Ambassador exchange:
+  * Only show cards in hand (no new draws)
+  * Shuffle discard pile into deck
+  
+REVEALING LAST CARD:
+- When player has 1 card and loses influence:
+  * Reveal the card
+  * Player eliminated
+  * No choice needed
+
+EXCHANGE WITH 1 CARD:
+- Ambassador with 1 influence:
+  * Draw 2 cards from deck
+  * See 3 cards total (1 current + 2 drawn)
+  * Keep 1, return 2 to deck
+
+10.3 CHALLENGE EDGE CASES
+--------------------------
+MULTIPLE CHALLENGES:
+- Only first challenger matters
+- Ignore subsequent challenges
+- First to click "Challenge" button
+
+CHALLENGING YOUR OWN BLOCK:
+- You cannot challenge your own block claim
+- Other players can challenge your block
+
+CHALLENGING REVEALED CARDS:
+- If player previously revealed Duke, they can still claim Duke
+- Challenge system doesn't "remember" revealed cards
+- However, bluffing is obvious to observant players
+
+10.4 DISCONNECT HANDLING
+-------------------------
+MID-TURN DISCONNECT:
+- If active player disconnects:
+  * Skip their turn
+  * Move to next player
+  
+- If target player disconnects:
+  * Actions targeting them fail gracefully
+  * Mark as disconnected but keep in game
+
+RECONNECTION:
+- Allow reconnection within 60 seconds
+- Restore game state to reconnected player
+- Continue from current turn
+
+GAME ABANDONMENT:
+- If <2 players remain connected:
+  * Game ends
+  * No winner declared
+
+10.5 TIMING EDGE CASES
+----------------------
+CHALLENGE WINDOW TIMEOUT:
+- After 10 seconds, if no challenge:
+  * Action proceeds
+  * Cannot challenge after timeout
+
+BLOCK WINDOW TIMEOUT:
+- After 10 seconds, if no block:
+  * Action executes
+  * Cannot block after timeout
+
+AFK PLAYERS:
+- If player doesn't act within 30 seconds:
+  * Auto-take Income action
+  * Move to next turn
+
+10.6 GAMEPLAY EDGE CASES
+-------------------------
+TWO PLAYERS LEFT:
+- Game continues normally
+- No special rules
+- Blocking/challenging still valid
+
+ASSASSINATION VS COUP:
+- Both cause influence loss
+- Assassination can be blocked
+- Coup cannot be blocked
+- Coup more expensive but guaranteed
+
+STEALING FROM ELIMINATED PLAYER:
+- Cannot target eliminated players
+- Button should be disabled
+
+SIMULTANEOUS BLOCKS:
+- Only first block attempt matters
+- Ignore subsequent blocks
+
+SELF-TARGETING:
+- Cannot steal from yourself
+- Cannot coup yourself
+- Cannot assassinate yourself
+
+================================================================================
+APPENDIX A: SAMPLE GAME FLOW
+================================================================================
+
+TURN 1: Player1 (2 coins, Duke + Captain)
+→ Takes TAX (claims Duke)
+→ No challenge
+→ Gains 3 coins (now 5 coins)
+
+TURN 2: Player2 (2 coins, Assassin + Contessa)
+→ Takes FOREIGN AID
+→ Player1 blocks with Duke (claims Duke)
+→ Player2 challenges the block
+→ Player1 reveals Duke
+→ Player2 loses influence (reveals Assassin)
+→ Player1 shuffles Duke back, draws new card
+→ Foreign Aid blocked (Player2 still has 2 coins)
+
+TURN 3: Player3 (2 coins, Ambassador + Ambassador)
+→ Takes INCOME
+→ Gains 1 coin (now 3 coins)
+
+TURN 4: Player1 (5 coins, Duke + Captain)
+→ STEALS from Player3 (claims Captain)
+→ Player3 blocks with Ambassador (claims Ambassador)
+→ No challenge on block
+→ Steal blocked (Player1 still has 5 coins)
+
+TURN 5: Player2 (2 coins, Contessa only)
+→ Takes INCOME
+→ Gains 1 coin (now 3 coins)
+
+...game continues until one player remains...
+
+================================================================================
+APPENDIX B: QUICK REFERENCE TABLES
+================================================================================
+
+ACTION SUMMARY:
+┌──────────────┬───────┬─────────────┬────────────┬───────────┐
+│ Action       │ Cost  │ Can Block   │ Challenge? │ Effect    │
+├──────────────┼───────┼─────────────┼────────────┼───────────┤
+│ Income       │ 0     │ No          │ No         │ +1 coin   │
+│ Foreign Aid  │ 0     │ Duke        │ No         │ +2 coins  │
+│ Coup         │ 7     │ No          │ No         │ -1 infl   │
+│ Tax          │ 0     │ No          │ Yes (Duke) │ +3 coins  │
+│ Assassinate  │ 3     │ Contessa    │ Yes (Ass)  │ -1 infl   │
+│ Steal        │ 0     │ Cap/Amb     │ Yes (Cap)  │ +2 coins  │
+│ Exchange     │ 0     │ No          │ Yes (Amb)  │ Swap cards│
+└──────────────┴───────┴─────────────┴────────────┴───────────┘
+
+CHARACTER ABILITIES:
+┌────────────┬──────────────┬─────────────┐
+│ Character  │ Action       │ Block       │
+├────────────┼──────────────┼─────────────┤
+│ Duke       │ Tax (+3)     │ Foreign Aid │
+│ Assassin   │ Assassinate  │ -           │
+│ Captain    │ Steal        │ Steal       │
+│ Ambassador │ Exchange     │ Steal       │
+│ Contessa   │ -            │ Assassinate │
+└────────────┴──────────────┴─────────────┘
+
+================================================================================
+APPENDIX C: IMPLEMENTATION CHECKLIST
+================================================================================
+
+MUST-HAVE FEATURES (MVP):
+□ Room creation with unique code
+□ 2-6 player support
+□ All 7 actions implemented
+□ Challenge system working
+□ Block system working
+□ Card reveal mechanism
+□ Win condition detection
+□ Turn rotation
+□ Coin management
+□ Influence tracking
+□ Basic UI with buttons
+□ Real-time state sync
+
+SHOULD-HAVE FEATURES (v1.1):
+□ Action history/log
+□ Countdown timers
+□ Better visual feedback
+□ Disconnect handling
+□ Reconnection logic
+□ Mobile responsiveness
+
+NICE-TO-HAVE FEATURES (v2.0):
+□ User accounts
+□ Game statistics
+□ Spectator mode
+□ Chat system
+□ Sound effects
+□ Animations
+□ Tutorial mode
+
+================================================================================
+APPENDIX D: TESTING SCENARIOS
+================================================================================
+
+SCENARIO 1: Basic Game Flow
+1. Create room with 3 players
+2. Player1 takes Income → verify +1 coin
+3. Player2 takes Foreign Aid → verify +2 coins
+4. Player3 takes Tax (Duke claim) → verify +3 coins
+5. Verify turn rotation works
+
+SCENARIO 2: Challenge Success
+1. Player1 claims Tax (Duke) but has no Duke
+2. Player2 challenges
+3. Verify Player1 loses influence
+4. Verify action fails
+5. Verify turn passes to next player
+
+SCENARIO 3: Challenge Failure
+1. Player1 claims Tax (Duke) and has Duke
+2. Player2 challenges
+3. Verify Player2 loses influence
+4. Verify Player1 gets new card
+5. Verify action succeeds
+
+SCENARIO 4: Block Success
+1. Player1 attempts Assassinate on Player2
+2. Player2 blocks with Contessa
+3. No challenge on block
+4. Verify Player2 keeps influence
+5. Verify Player1 loses 3 coins
+
+SCENARIO 5: 10-Coin Rule
+1. Player accumulates 10 coins
+2. Verify only Coup action available
+3. Verify forced to use Coup
+
+SCENARIO 6: Win Condition
+1. Eliminate all but one player
+2. Verify game ends
+3. Verify winner declared
+4. Verify no more actions possible
+
+SCENARIO 7: Ambassador Exchange
+1. Player claims Ambassador
+2. No challenge
+3. Verify player sees 4 cards (2 hand + 2 drawn)
+4. Verify player keeps 2, returns 2
+5. Verify deck reshuffled
+
+SCENARIO 8: Disconnect/Reconnect
+1. Player disconnects mid-game
+2. Verify game continues
+3. Player reconnects
+4. Verify state restored correctly
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+
+Last Updated: February 11, 2026
+Version: 1.0
+Status: Ready for Development
+
+For questions or clarifications, refer to official Coup rulebook or this
+comprehensive PRD document.
+
+Good luck with your vibe coding! 🎴
