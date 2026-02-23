@@ -12,7 +12,7 @@ function App() {
     const updateGameState = useGameStore(state => state.updateGameState);
 
     useEffect(() => {
-        const socket = io();
+        const socket = io(import.meta.env.VITE_API_URL || undefined);
 
         socket.on('connect', () => {
             console.log('Connected to server');
