@@ -162,8 +162,12 @@ export const ChallengePanel = () => {
     }
 
     // Card reveal window
-    if (gameState === 'CHOOSING_INFLUENCE' &&
-        actionInProgress.awaitingRevealFrom === playerId) {
+    const awaitingReveal =
+        actionInProgress.awaitingRevealFrom === playerId ||
+        actionInProgress.challengeResult?.awaitingRevealFrom === playerId ||
+        actionInProgress.blockChallengeResult?.awaitingRevealFrom === playerId;
+
+    if (gameState === 'CHOOSING_INFLUENCE' && awaitingReveal) {
         return (
             <div className="challenge-panel reveal-panel">
                 <h3>Choose a Card to Reveal</h3>
@@ -222,7 +226,11 @@ export const ChallengePanel = () => {
 
     function handlePass() {
         if (!socket || !gameId) return;
-        socket.emit('pass', { gameId, playerId });
+        socket.emit('pass', { gameId, playerId }, (response) => {
+            if (!response?.success) {
+                console.log('Pass failed:', response?.error || response?.message);
+            }
+        });
     }
 
     function handleRevealCard(cardIndex) {

@@ -408,9 +408,20 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            // This is mainly for UI feedback - actual timeout handles progression
+            const actionHandler = new ActionHandler(game);
+            const result = actionHandler.handlePass(playerId);
+
             if (callback && typeof callback === 'function') {
-                callback({ success: true, message: 'Passed' });
+                callback({ success: result.success, message: result.message });
+            }
+
+            if (result.success) {
+                // Broadcast updated state to all players
+                game.players.forEach(p => {
+                    io.to(p.socketId).emit('gameStateUpdate',
+                        game.getGameStateForPlayer(p.id)
+                    );
+                });
             }
 
         } catch (error) {

@@ -1005,4 +1005,35 @@ export class ActionHandler {
         // No block, resolve action
         return this.resolveActionAfterChallenge();
     }
+
+    // Handle pass (immediately resolve the current waiting phase)
+    handlePass(playerId) {
+        const action = this.game.actionInProgress;
+        if (!action) {
+            return { success: false, message: 'No action in progress' };
+        }
+
+        // Cannot pass on your own action
+        if (action.actingPlayer === playerId && this.game.gameState === GAME_STATES.WAITING_CHALLENGE) {
+            return { success: false, message: 'Cannot pass on your own action' };
+        }
+
+        switch (this.game.gameState) {
+            case GAME_STATES.WAITING_CHALLENGE:
+                return this.handleNoChallenge();
+
+            case GAME_STATES.WAITING_BLOCK:
+                return this.handleNoBlock();
+
+            case GAME_STATES.WAITING_BLOCK_CHALLENGE:
+                // Cannot pass on your own block
+                if (action.blockAttempt && action.blockAttempt.blockerId === playerId) {
+                    return { success: false, message: 'Cannot pass on your own block' };
+                }
+                return this.handleNoBlockChallenge();
+
+            default:
+                return { success: false, message: 'Cannot pass in current state' };
+        }
+    }
 }
