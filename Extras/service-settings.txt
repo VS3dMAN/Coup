@@ -1,0 +1,30 @@
+===================================================
+  RENDER SERVICE SETTINGS — Coup Game
+  Exported: 2026-02-23
+===================================================
+
+
+--- BACKEND (Coup) ---
+
+Service type:           Web Service
+Branch:                 main (auto-deploy on commit)
+Build command:          npm install
+Start command:          npm start
+Instance type:          Free
+Region:                 Singapore
+Root directory:         server
+Health check path:      (default — not custom configured)
+Scaling rules:          None (Free tier — single instance, no autoscaling)
+
+
+--- FRONTEND (Coup-FE) ---
+
+Service type:           Static Site
+Branch:                 main (auto-deploy on commit)
+Build command:          npm install && npm run build
+Publish directory:      dist
+Instance type:          Free (static)
+Region:                 (inherited / default)
+Root directory:         client
+Health check path:      N/A (static site)
+Scaling rules:          N/A (static site — served via CDN)

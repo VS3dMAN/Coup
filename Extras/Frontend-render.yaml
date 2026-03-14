@@ -1,0 +1,18 @@
+# Exported from Render on 2026-02-23T08:40:02Z
+version: "1"
+projects:
+- name: My project
+  environments:
+  - name: Production
+    services:
+    - type: web
+      name: Coup-FE
+      runtime: static
+      repo: https://github.com/VS3dMAN/Coup
+      envVars:
+      - key: VITE_API_URL
+        sync: false
+      buildCommand: npm install && npm run build
+      staticPublishPath: dist
+      autoDeployTrigger: commit
+      rootDir: client

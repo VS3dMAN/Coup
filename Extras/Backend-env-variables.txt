@@ -1,0 +1,4 @@
+CLIENT_URL=https://coup-fe.onrender.com
+CORS_ORIGIN=https://coup-fe.onrender.com
+NODE_ENV=production
+PORT=10000

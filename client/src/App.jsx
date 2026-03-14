@@ -1,18 +1,19 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
 import { useGameStore } from './store/gameStore';
+import { useSocket } from './hooks/useSocket';
 import { CreateRoom } from './components/Lobby/CreateRoom';
 import { JoinRoom } from './components/Lobby/JoinRoom';
 import { GameBoard } from './components/Game/GameBoard';
 import './styles/global.css';
 
 function App() {
+    const { socket } = useSocket();
     const setSocket = useGameStore(state => state.setSocket);
     const updateGameState = useGameStore(state => state.updateGameState);
 
     useEffect(() => {
-        const socket = io(import.meta.env.VITE_API_URL || undefined);
+        if (!socket) return;
 
         socket.on('connect', () => {
             console.log('Connected to server');
@@ -29,9 +30,11 @@ function App() {
         });
 
         return () => {
-            socket.close();
+            socket.off('connect');
+            socket.off('gameStateUpdate');
+            socket.off('disconnect');
         };
-    }, []);
+    }, [socket]);
 
     return (
         <BrowserRouter>
