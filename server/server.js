@@ -5,6 +5,7 @@ import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import { GameManager } from './managers/GameManager.js';
 import { ActionHandler } from './utils/actions.js';
+import { GAME_STATES } from './utils/constants.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -32,6 +33,111 @@ app.use(express.json());
 
 // Initialize game manager
 const gameManager = new GameManager();
+
+// Helper: broadcast game state to all players in a game
+function broadcastGameState(game) {
+    game.players.forEach(p => {
+        io.to(p.socketId).emit('gameStateUpdate',
+            game.getGameStateForPlayer(p.id));
+    });
+    if (game.gameState === GAME_STATES.GAME_OVER) {
+        io.to(game.roomCode).emit('gameOver', {
+            winner: game.winner,
+            players: game.players.map(p => p.getSafeData())
+        });
+    }
+}
+
+// Helper: auto-reveal first unrevealed card for a player
+function autoRevealCard(game, gameId) {
+    const action = game.actionInProgress;
+    if (!action) return;
+
+    const revealFromId = action.awaitingRevealFrom ||
+        action.challengeResult?.awaitingRevealFrom ||
+        action.blockChallengeResult?.awaitingRevealFrom;
+    if (!revealFromId) return;
+
+    const player = game.players.find(p => p.id === revealFromId);
+    if (!player) return;
+
+    const autoCardIndex = player.cards.findIndex(c => !c.revealed);
+    if (autoCardIndex === -1) return;
+
+    const handler = new ActionHandler(game);
+    let result;
+    if (action.challengeResult) {
+        if (action.challengeResult.actionFails) {
+            result = handler.handleFailedClaimReveal(revealFromId, autoCardIndex);
+        } else {
+            result = handler.handleChallengeReveal(revealFromId, autoCardIndex);
+        }
+    } else if (action.blockChallengeResult) {
+        result = handler.handleBlockChallengeReveal(revealFromId, autoCardIndex);
+    } else {
+        result = handler.revealCard(revealFromId, autoCardIndex);
+    }
+
+    handlePostResult(game, gameId, result);
+    broadcastGameState(game);
+}
+
+// Helper: set a game timer with state guard and automatic phase chaining
+function setGameTimer(game, gameId, expectedState, handlerFn, timeout = 10000) {
+    if (game.pendingTimer) {
+        clearTimeout(game.pendingTimer);
+        game.pendingTimer = null;
+    }
+    game.pendingTimer = setTimeout(() => {
+        game.pendingTimer = null;
+        const currentGame = gameManager.getGame(gameId);
+        if (!currentGame || currentGame.gameState !== expectedState) return;
+
+        const handler = new ActionHandler(currentGame);
+        const result = handlerFn(handler, currentGame);
+
+        // Chain timers for subsequent phases
+        handlePostResult(currentGame, gameId, result);
+
+        broadcastGameState(currentGame);
+    }, timeout);
+}
+
+// Helper: after an action resolves, set up timers for the next phase if needed
+function handlePostResult(game, gameId, result) {
+    if (!result) return;
+
+    if (result.awaitingBlock) {
+        setGameTimer(game, gameId, GAME_STATES.WAITING_BLOCK,
+            (h) => h.handleNoBlock(), 10000);
+    } else if (result.awaitingBlockChallenge) {
+        setGameTimer(game, gameId, GAME_STATES.WAITING_BLOCK_CHALLENGE,
+            (h) => h.handleNoBlockChallenge(), result.timeout || 10000);
+    } else if (result.requiresReveal) {
+        // Use direct timeout for reveal to avoid double-broadcast
+        if (game.pendingTimer) {
+            clearTimeout(game.pendingTimer);
+            game.pendingTimer = null;
+        }
+        game.pendingTimer = setTimeout(() => {
+            game.pendingTimer = null;
+            const cg = gameManager.getGame(gameId);
+            if (!cg || cg.gameState !== GAME_STATES.CHOOSING_INFLUENCE) return;
+            autoRevealCard(cg, gameId);
+        }, 30000);
+    } else if (result.requiresCardSelection) {
+        // Auto-select first N cards for exchange after 30s
+        game.pendingTimer = setTimeout(() => {
+            game.pendingTimer = null;
+            const cg = gameManager.getGame(gameId);
+            if (!cg || !cg.actionInProgress?.awaitingCardSelection) return;
+            const h = new ActionHandler(cg);
+            const autoIndices = Array.from({ length: cg.actionInProgress.mustKeep }, (_, i) => i);
+            h.selectExchangeCards(cg.actionInProgress.actingPlayer, autoIndices);
+            broadcastGameState(cg);
+        }, 30000);
+    }
+}
 
 // Health check
 app.get('/health', (req, res) => {
@@ -71,6 +177,32 @@ io.on('connection', (socket) => {
             );
 
             console.log(`Room created: ${game.roomCode} by ${playerName}`);
+        } catch (error) {
+            callback({ success: false, error: error.message });
+        }
+    });
+
+    // REJOIN ROOM (reconnection with stored session token)
+    socket.on('rejoinRoom', (data, callback) => {
+        try {
+            const { gameId, playerId } = data;
+            const game = gameManager.getGame(gameId);
+            if (!game) return callback({ success: false, error: 'Game not found' });
+
+            const player = game.players.find(p => p.id === playerId);
+            if (!player) return callback({ success: false, error: 'Player not found in game' });
+
+            player.socketId = socket.id;
+            player.isConnected = true;
+            socket.join(game.roomCode);
+
+            callback({ success: true, gameId, playerId, roomCode: game.roomCode });
+
+            game.players.forEach(p => {
+                io.to(p.socketId).emit('gameStateUpdate', game.getGameStateForPlayer(p.id));
+            });
+
+            console.log(`${player.name} rejoined room: ${game.roomCode}`);
         } catch (error) {
             callback({ success: false, error: error.message });
         }
@@ -126,6 +258,8 @@ io.on('connection', (socket) => {
                 return callback({ success: false, error: 'Game not found' });
             }
 
+            game.lastActivity = Date.now();
+
             if (game.hostId !== playerId) {
                 return callback({ success: false, error: 'Only host can start game' });
             }
@@ -156,6 +290,8 @@ io.on('connection', (socket) => {
             if (!game) {
                 return callback({ success: false, error: 'Game not found' });
             }
+
+            game.lastActivity = Date.now();
 
             const actionHandler = new ActionHandler(game);
 
@@ -202,27 +338,18 @@ io.on('connection', (socket) => {
                 );
             });
 
-            // Set timeout for challenge/block windows if needed
+            // Set up timers for challenge/block/reveal phases
             if (result.awaitingChallenge || result.awaitingBlock) {
-                setTimeout(() => {
-                    const currentGame = gameManager.getGame(gameId);
-                    if (!currentGame) return;
-
-                    const handler = new ActionHandler(currentGame);
-                    let timeoutResult;
-
-                    if (result.awaitingChallenge) {
-                        timeoutResult = handler.handleNoChallenge();
-                    } else if (result.awaitingBlock) {
-                        timeoutResult = handler.handleNoBlock();
-                    }
-
-                    currentGame.players.forEach(p => {
-                        io.to(p.socketId).emit('gameStateUpdate',
-                            currentGame.getGameStateForPlayer(p.id)
-                        );
-                    });
-                }, result.timeout || 10000);
+                const expectedState = result.awaitingChallenge
+                    ? GAME_STATES.WAITING_CHALLENGE
+                    : GAME_STATES.WAITING_BLOCK;
+                const handler = result.awaitingChallenge
+                    ? (h) => h.handleNoChallenge()
+                    : (h) => h.handleNoBlock();
+                setGameTimer(game, gameId, expectedState, handler, result.timeout || 10000);
+            } else {
+                // Handle Coup reveal, exchange card selection, etc.
+                handlePostResult(game, gameId, result);
             }
 
         } catch (error) {
@@ -241,17 +368,22 @@ io.on('connection', (socket) => {
                 return callback({ success: false, error: 'Game not found' });
             }
 
+            game.lastActivity = Date.now();
+
             const actionHandler = new ActionHandler(game);
             const result = actionHandler.handleChallenge(playerId);
 
+            if (result.success && game.pendingTimer) {
+                clearTimeout(game.pendingTimer);
+                game.pendingTimer = null;
+            }
+
             callback(result);
 
-            // Broadcast updated state
-            game.players.forEach(p => {
-                io.to(p.socketId).emit('gameStateUpdate',
-                    game.getGameStateForPlayer(p.id)
-                );
-            });
+            broadcastGameState(game);
+
+            // Set up timer for card reveal after challenge
+            handlePostResult(game, gameId, result);
 
         } catch (error) {
             callback({ success: false, error: error.message });
@@ -268,33 +400,25 @@ io.on('connection', (socket) => {
                 return callback({ success: false, error: 'Game not found' });
             }
 
+            game.lastActivity = Date.now();
+
+            // Clear the challenge/block-window timer since a block supersedes it
+            if (game.pendingTimer) {
+                clearTimeout(game.pendingTimer);
+                game.pendingTimer = null;
+            }
+
             const actionHandler = new ActionHandler(game);
             const result = actionHandler.handleBlock(playerId, blockingCharacter);
 
             callback(result);
 
-            // Broadcast updated state
-            game.players.forEach(p => {
-                io.to(p.socketId).emit('gameStateUpdate',
-                    game.getGameStateForPlayer(p.id)
-                );
-            });
+            broadcastGameState(game);
 
             // Set timeout for block challenge window
             if (result.awaitingBlockChallenge) {
-                setTimeout(() => {
-                    const currentGame = gameManager.getGame(gameId);
-                    if (!currentGame) return;
-
-                    const handler = new ActionHandler(currentGame);
-                    const timeoutResult = handler.handleNoBlockChallenge();
-
-                    currentGame.players.forEach(p => {
-                        io.to(p.socketId).emit('gameStateUpdate',
-                            currentGame.getGameStateForPlayer(p.id)
-                        );
-                    });
-                }, result.timeout || 10000);
+                setGameTimer(game, gameId, GAME_STATES.WAITING_BLOCK_CHALLENGE,
+                    (h) => h.handleNoBlockChallenge(), result.timeout || 10000);
             }
 
         } catch (error) {
@@ -312,17 +436,22 @@ io.on('connection', (socket) => {
                 return callback({ success: false, error: 'Game not found' });
             }
 
+            game.lastActivity = Date.now();
+
             const actionHandler = new ActionHandler(game);
             const result = actionHandler.handleBlockChallenge(playerId);
 
+            if (result.success && game.pendingTimer) {
+                clearTimeout(game.pendingTimer);
+                game.pendingTimer = null;
+            }
+
             callback(result);
 
-            // Broadcast updated state
-            game.players.forEach(p => {
-                io.to(p.socketId).emit('gameStateUpdate',
-                    game.getGameStateForPlayer(p.id)
-                );
-            });
+            broadcastGameState(game);
+
+            // Set up timer for card reveal after block challenge
+            handlePostResult(game, gameId, result);
 
         } catch (error) {
             callback({ success: false, error: error.message });
@@ -337,6 +466,14 @@ io.on('connection', (socket) => {
 
             if (!game) {
                 return callback({ success: false, error: 'Game not found' });
+            }
+
+            game.lastActivity = Date.now();
+
+            // Clear any pending reveal timeout since player acted manually
+            if (game.pendingTimer) {
+                clearTimeout(game.pendingTimer);
+                game.pendingTimer = null;
             }
 
             const actionHandler = new ActionHandler(game);
@@ -358,20 +495,10 @@ io.on('connection', (socket) => {
 
             callback(result);
 
-            // Broadcast updated state
-            game.players.forEach(p => {
-                io.to(p.socketId).emit('gameStateUpdate',
-                    game.getGameStateForPlayer(p.id)
-                );
-            });
+            broadcastGameState(game);
 
-            // If game is over, notify everyone
-            if (result.gameOver) {
-                io.to(game.roomCode).emit('gameOver', {
-                    winner: game.winner,
-                    players: game.players.map(p => p.getSafeData())
-                });
-            }
+            // Chain timers for post-reveal phases
+            handlePostResult(game, gameId, result);
 
         } catch (error) {
             callback({ success: false, error: error.message });
@@ -388,17 +515,20 @@ io.on('connection', (socket) => {
                 return callback({ success: false, error: 'Game not found' });
             }
 
+            game.lastActivity = Date.now();
+
+            // Clear exchange selection timeout since player acted
+            if (game.pendingTimer) {
+                clearTimeout(game.pendingTimer);
+                game.pendingTimer = null;
+            }
+
             const actionHandler = new ActionHandler(game);
             const result = actionHandler.selectExchangeCards(playerId, selectedIndices);
 
             callback(result);
 
-            // Broadcast updated state
-            game.players.forEach(p => {
-                io.to(p.socketId).emit('gameStateUpdate',
-                    game.getGameStateForPlayer(p.id)
-                );
-            });
+            broadcastGameState(game);
 
         } catch (error) {
             callback({ success: false, error: error.message });
@@ -418,6 +548,8 @@ io.on('connection', (socket) => {
                 return;
             }
 
+            game.lastActivity = Date.now();
+
             const actionHandler = new ActionHandler(game);
             const result = actionHandler.handlePass(playerId);
 
@@ -426,12 +558,17 @@ io.on('connection', (socket) => {
             }
 
             if (result.success) {
-                // Broadcast updated state to all players
-                game.players.forEach(p => {
-                    io.to(p.socketId).emit('gameStateUpdate',
-                        game.getGameStateForPlayer(p.id)
-                    );
-                });
+                // If all players passed (not just waiting), clear timer and chain next phase
+                if (!result.waiting) {
+                    if (game.pendingTimer) {
+                        clearTimeout(game.pendingTimer);
+                        game.pendingTimer = null;
+                    }
+                    // Chain timers for next phase (block window, reveal, etc.)
+                    handlePostResult(game, gameId, result);
+                }
+
+                broadcastGameState(game);
             }
 
         } catch (error) {
@@ -460,10 +597,90 @@ io.on('connection', (socket) => {
                         });
                     }
                 });
+
+                // Auto-resolve if game is waiting on this player (5s grace period)
+                if (game.status === 'ACTIVE' && player.isAlive) {
+                    const disconnectedPlayerId = player.id;
+                    setTimeout(() => {
+                        const cg = gameManager.getGame(gameId);
+                        if (!cg) return;
+                        const p = cg.players.find(pl => pl.id === disconnectedPlayerId);
+                        if (!p || p.isConnected) return; // player reconnected
+
+                        // If it's their turn, auto-take Income
+                        if (cg.gameState === GAME_STATES.ACTIVE_TURN &&
+                            cg.getCurrentPlayer().id === disconnectedPlayerId) {
+                            const handler = new ActionHandler(cg);
+                            handler.executeIncome(disconnectedPlayerId);
+                            broadcastGameState(cg);
+                            return;
+                        }
+
+                        // If waiting for their pass in challenge/block, auto-pass
+                        if ([GAME_STATES.WAITING_CHALLENGE, GAME_STATES.WAITING_BLOCK,
+                             GAME_STATES.WAITING_BLOCK_CHALLENGE].includes(cg.gameState)) {
+                            const handler = new ActionHandler(cg);
+                            const result = handler.handlePass(disconnectedPlayerId);
+                            if (result.success) {
+                                if (!result.waiting) {
+                                    if (cg.pendingTimer) {
+                                        clearTimeout(cg.pendingTimer);
+                                        cg.pendingTimer = null;
+                                    }
+                                    handlePostResult(cg, gameId, result);
+                                }
+                                broadcastGameState(cg);
+                            }
+                            return;
+                        }
+
+                        // If waiting for their card reveal, auto-reveal
+                        if (cg.gameState === GAME_STATES.CHOOSING_INFLUENCE) {
+                            autoRevealCard(cg, gameId);
+                            return;
+                        }
+
+                        // If waiting for their exchange card selection, auto-select
+                        if (cg.actionInProgress?.awaitingCardSelection &&
+                            cg.actionInProgress.actingPlayer === disconnectedPlayerId) {
+                            const handler = new ActionHandler(cg);
+                            const autoIndices = Array.from(
+                                { length: cg.actionInProgress.mustKeep }, (_, i) => i
+                            );
+                            handler.selectExchangeCards(disconnectedPlayerId, autoIndices);
+                            broadcastGameState(cg);
+                        }
+                    }, 5000);
+                }
             }
         }
     });
 });
+
+// Redis adapter for horizontal scaling (optional).
+// Set REDIS_URL env var to enable. Without it, falls back to single-instance mode.
+// IMPORTANT: also configure sticky sessions at your load balancer — game state is
+// in-memory, so all sockets from the same room must route to the same server instance.
+async function initRedisAdapter() {
+    if (!process.env.REDIS_URL) return;
+    try {
+        const { createAdapter } = await import('@socket.io/redis-adapter');
+        const { Redis } = await import('ioredis');
+        const pubClient = new Redis(process.env.REDIS_URL);
+        const subClient = pubClient.duplicate();
+        pubClient.on('error', (err) => console.error('Redis pub error:', err.message));
+        subClient.on('error', (err) => console.error('Redis sub error:', err.message));
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log('Socket.IO Redis adapter enabled');
+    } catch (err) {
+        console.warn('Redis adapter setup failed, running single-instance:', err.message);
+    }
+}
+
+await initRedisAdapter();
+
+// Periodic cleanup of inactive/finished games (every 30 minutes)
+setInterval(() => gameManager.cleanupOldGames(), 30 * 60 * 1000);
 
 const PORT = process.env.PORT || 8080;
 httpServer.listen(PORT, () => {

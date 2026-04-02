@@ -144,7 +144,8 @@ export class ActionHandler {
             targetPlayer: null,
             blockable: true,
             blockableBy: ['Duke'],
-            canChallenge: false
+            canChallenge: false,
+            passedPlayers: []
         };
 
         this.game.actionHistory.push({
@@ -190,7 +191,8 @@ export class ActionHandler {
             targetPlayer: null,
             claimedCharacter: 'Duke',
             canChallenge: true,
-            blockable: false
+            blockable: false,
+            passedPlayers: []
         };
 
         this.game.actionHistory.push({
@@ -275,7 +277,8 @@ export class ActionHandler {
             claimedCharacter: 'Assassin',
             canChallenge: true,
             blockable: true,
-            blockableBy: ['Contessa']
+            blockableBy: ['Contessa'],
+            passedPlayers: []
         };
 
         this.game.actionHistory.push({
@@ -326,7 +329,8 @@ export class ActionHandler {
             claimedCharacter: 'Captain',
             canChallenge: true,
             blockable: true,
-            blockableBy: ['Captain', 'Ambassador']
+            blockableBy: ['Captain', 'Ambassador'],
+            passedPlayers: []
         };
 
         this.game.actionHistory.push({
@@ -376,7 +380,8 @@ export class ActionHandler {
             targetPlayer: null,
             claimedCharacter: 'Ambassador',
             canChallenge: true,
-            blockable: false
+            blockable: false,
+            passedPlayers: []
         };
 
         this.game.actionHistory.push({
@@ -628,7 +633,8 @@ export class ActionHandler {
 
         // Move to appropriate next state
         if (action.blockable) {
-            // If action can be blocked, enter block window
+            // If action can be blocked, enter block window - reset pass tracking
+            action.passedPlayers = [];
             this.game.gameState = GAME_STATES.WAITING_BLOCK;
             return {
                 success: true,
@@ -719,6 +725,8 @@ export class ActionHandler {
         switch (action.type) {
             case ACTIONS.TAX:
                 return this.resolveTax();
+            case ACTIONS.FOREIGN_AID:
+                return this.resolveForeignAid();
             case ACTIONS.ASSASSINATE:
                 return this.resolveAssassinate();
             case ACTIONS.STEAL:
@@ -735,7 +743,8 @@ export class ActionHandler {
         const action = this.game.actionInProgress;
 
         if (action.blockable) {
-            // Move to block window
+            // Move to block window - reset pass tracking for new phase
+            action.passedPlayers = [];
             this.game.gameState = GAME_STATES.WAITING_BLOCK;
             return {
                 success: true,
@@ -777,7 +786,8 @@ export class ActionHandler {
             return { success: false, message: 'Only target can block assassination' };
         }
 
-        // Set up challenge window for the block
+        // Set up challenge window for the block - reset pass tracking
+        this.game.actionInProgress.passedPlayers = [];
         this.game.gameState = GAME_STATES.WAITING_BLOCK_CHALLENGE;
         this.game.actionInProgress.blockAttempt = {
             blockerId: blockerId,
@@ -1006,17 +1016,79 @@ export class ActionHandler {
         return this.resolveActionAfterChallenge();
     }
 
-    // Handle pass (immediately resolve the current waiting phase)
+    // Get list of player IDs who must pass before the current phase resolves
+    getEligiblePassPlayers() {
+        const action = this.game.actionInProgress;
+        const alivePlayers = this.game.players.filter(p => p.isAlive).map(p => p.id);
+
+        switch (this.game.gameState) {
+            case GAME_STATES.WAITING_CHALLENGE:
+                // Everyone except the acting player can challenge or pass
+                return alivePlayers.filter(pid => pid !== action.actingPlayer);
+
+            case GAME_STATES.WAITING_BLOCK:
+                // Everyone except the acting player can block or pass
+                return alivePlayers.filter(pid => pid !== action.actingPlayer);
+
+            case GAME_STATES.WAITING_BLOCK_CHALLENGE:
+                // Everyone except the blocker can challenge the block or pass
+                return alivePlayers.filter(pid => pid !== action.blockAttempt?.blockerId);
+
+            default:
+                return [];
+        }
+    }
+
+    // Handle pass (track who passed, only resolve when ALL eligible players have passed)
     handlePass(playerId) {
         const action = this.game.actionInProgress;
         if (!action) {
             return { success: false, message: 'No action in progress' };
         }
 
+        const player = this.game.players.find(p => p.id === playerId);
+        if (!player || !player.isAlive) {
+            return { success: false, message: 'Invalid player' };
+        }
+
         // Cannot pass on your own action
         if (action.actingPlayer === playerId && this.game.gameState === GAME_STATES.WAITING_CHALLENGE) {
             return { success: false, message: 'Cannot pass on your own action' };
         }
+
+        // Cannot pass on your own block
+        if (this.game.gameState === GAME_STATES.WAITING_BLOCK_CHALLENGE &&
+            action.blockAttempt && action.blockAttempt.blockerId === playerId) {
+            return { success: false, message: 'Cannot pass on your own block' };
+        }
+
+        // Initialize passedPlayers if missing
+        if (!action.passedPlayers) {
+            action.passedPlayers = [];
+        }
+
+        // Prevent double-pass
+        if (action.passedPlayers.includes(playerId)) {
+            return { success: false, message: 'Already passed' };
+        }
+
+        action.passedPlayers.push(playerId);
+
+        // Check if ALL eligible players have passed
+        const eligiblePlayers = this.getEligiblePassPlayers();
+        const allPassed = eligiblePlayers.every(pid => action.passedPlayers.includes(pid));
+
+        if (!allPassed) {
+            // Still waiting for more players
+            return {
+                success: true,
+                message: 'Pass recorded, waiting for other players',
+                waiting: true
+            };
+        }
+
+        // All eligible players passed — resolve the current phase
+        action.passedPlayers = [];
 
         switch (this.game.gameState) {
             case GAME_STATES.WAITING_CHALLENGE:
@@ -1026,10 +1098,6 @@ export class ActionHandler {
                 return this.handleNoBlock();
 
             case GAME_STATES.WAITING_BLOCK_CHALLENGE:
-                // Cannot pass on your own block
-                if (action.blockAttempt && action.blockAttempt.blockerId === playerId) {
-                    return { success: false, message: 'Cannot pass on your own block' };
-                }
                 return this.handleNoBlockChallenge();
 
             default:

@@ -36,6 +36,7 @@ export const JoinRoom = () => {
             if (response.success) {
                 setPlayerInfo(response.playerId, playerName.trim());
                 setRoomInfo(roomCode.toUpperCase(), response.gameId);
+                useGameStore.getState().saveSession();
                 navigate(`/game/${roomCode.toUpperCase()}`);
             } else {
                 setError(response.error || 'Failed to join room');

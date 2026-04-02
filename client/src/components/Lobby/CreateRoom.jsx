@@ -27,6 +27,7 @@ export const CreateRoom = () => {
             if (response.success) {
                 setPlayerInfo(response.playerId, playerName.trim());
                 setRoomInfo(response.roomCode, response.gameId);
+                useGameStore.getState().saveSession();
                 navigate(`/game/${response.roomCode}`);
             } else {
                 setError(response.error || 'Failed to create room');

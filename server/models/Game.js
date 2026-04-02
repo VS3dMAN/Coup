@@ -16,7 +16,9 @@ export class Game {
         this.actionHistory = [];
         this.winner = null;
         this.createdAt = Date.now();
+        this.lastActivity = Date.now();
         this.hostId = null;
+        this.pendingTimer = null;
     }
 
     // Initialize deck with 3 of each character (15 cards total)
@@ -101,6 +103,17 @@ export class Game {
 
     // Move to next player's turn
     nextTurn() {
+        // Clear any orphaned timer from previous phase
+        if (this.pendingTimer) {
+            clearTimeout(this.pendingTimer);
+            this.pendingTimer = null;
+        }
+
+        // Guard against infinite loop when only 1 player alive
+        if (this.checkWinCondition()) {
+            return;
+        }
+
         do {
             this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.length;
         } while (!this.getCurrentPlayer().isAlive);

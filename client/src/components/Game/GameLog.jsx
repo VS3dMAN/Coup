@@ -1,12 +1,36 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../../store/gameStore';
 
+const ACTION_VERBS = {
+    INCOME: 'took Income',
+    FOREIGN_AID: 'took Foreign Aid',
+    COUP: 'launched a Coup on',
+    TAX: 'claimed Tax (Duke) on',
+    ASSASSINATE: 'attempted to Assassinate',
+    STEAL: 'attempted to Steal from',
+    EXCHANGE: 'used Exchange (Ambassador)',
+    CHALLENGE: 'challenged',
+    BLOCK: 'blocked',
+    CHALLENGE_BLOCK: 'challenged the block by',
+};
+
+function formatLogEntry(entry) {
+    const verb = ACTION_VERBS[entry.action] || entry.action;
+    // For untargeted actions, drop the trailing 'on' / 'from'
+    const cleanVerb = !entry.target
+        ? verb.replace(/ (on|from)$/, '')
+        : verb;
+    let text = `${entry.player} ${cleanVerb}`;
+    if (entry.target) text += ` ${entry.target}`;
+    if (entry.details) text += ` — ${entry.details}`;
+    return text;
+}
+
 export const GameLog = () => {
     const actionHistory = useGameStore(state => state.actionHistory);
     const logRef = useRef(null);
 
     useEffect(() => {
-        // Auto-scroll to bottom when new actions are added
         if (logRef.current) {
             logRef.current.scrollTop = logRef.current.scrollHeight;
         }
@@ -21,10 +45,7 @@ export const GameLog = () => {
                 ) : (
                     actionHistory.map((entry, idx) => (
                         <div key={idx} className={`log-entry ${entry.result}`}>
-                            <span className="log-player">{entry.player}</span>
-                            <span className="log-action">{entry.action}</span>
-                            {entry.target && <span className="log-target">→ {entry.target}</span>}
-                            <span className="log-result">{entry.details}</span>
+                            {formatLogEntry(entry)}
                         </div>
                     ))
                 )}

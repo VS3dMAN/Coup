@@ -38,6 +38,8 @@ export const ChallengePanel = () => {
     const actor = players.find(p => p.id === actionInProgress.actingPlayer);
     const target = actionInProgress.targetPlayer ?
         players.find(p => p.id === actionInProgress.targetPlayer) : null;
+    const alreadyPassed = actionInProgress.passedPlayers?.includes(playerId);
+    const passCount = actionInProgress.passedPlayers?.length || 0;
 
     // Challenge window
     if (gameState === 'WAITING_CHALLENGE' && playerId !== actionInProgress.actingPlayer) {
@@ -55,16 +57,21 @@ export const ChallengePanel = () => {
                     <button
                         onClick={() => handleChallenge()}
                         className="challenge-btn"
+                        disabled={alreadyPassed}
                     >
                         Challenge
                     </button>
                     <button
                         onClick={() => handlePass()}
                         className="pass-btn"
+                        disabled={alreadyPassed}
                     >
-                        Pass
+                        {alreadyPassed ? 'Passed' : 'Pass'}
                     </button>
                 </div>
+                {passCount > 0 && (
+                    <p className="pass-info">{passCount} player(s) passed</p>
+                )}
             </div>
         );
     }
@@ -97,6 +104,7 @@ export const ChallengePanel = () => {
                                 key={character}
                                 onClick={() => setSelectedBlock(character)}
                                 className="block-btn"
+                                disabled={alreadyPassed}
                             >
                                 Block with {character}
                             </button>
@@ -104,8 +112,9 @@ export const ChallengePanel = () => {
                         <button
                             onClick={() => handlePass()}
                             className="pass-btn"
+                            disabled={alreadyPassed}
                         >
-                            Pass
+                            {alreadyPassed ? 'Passed' : 'Pass'}
                         </button>
                     </div>
                 ) : (
@@ -124,6 +133,9 @@ export const ChallengePanel = () => {
                             Cancel
                         </button>
                     </div>
+                )}
+                {passCount > 0 && (
+                    <p className="pass-info">{passCount} player(s) passed</p>
                 )}
             </div>
         );
@@ -147,16 +159,21 @@ export const ChallengePanel = () => {
                     <button
                         onClick={() => handleChallengeBlock()}
                         className="challenge-btn"
+                        disabled={alreadyPassed}
                     >
                         Challenge Block
                     </button>
                     <button
                         onClick={() => handlePass()}
                         className="pass-btn"
+                        disabled={alreadyPassed}
                     >
-                        Pass
+                        {alreadyPassed ? 'Passed' : 'Pass'}
                     </button>
                 </div>
+                {passCount > 0 && (
+                    <p className="pass-info">{passCount} player(s) passed</p>
+                )}
             </div>
         );
     }

@@ -33,15 +33,25 @@ export const useGameStore = create((set, get) => ({
 
     setRoomInfo: (roomCode, gameId) => set({ roomCode, gameId }),
 
-    updateGameState: (gameState) => set({
-        gameState: gameState.gameState,
-        players: gameState.players,
-        currentPlayerId: gameState.currentPlayerId,
-        actionInProgress: gameState.actionInProgress,
-        actionHistory: gameState.actionHistory,
-        winner: gameState.winner,
-        hostId: gameState.hostId
-    }),
+    updateGameState: (gameState) => {
+        try {
+            if (!gameState || typeof gameState !== 'object') {
+                throw new Error('Received invalid game state from server');
+            }
+            set({
+                gameState: gameState.gameState,
+                players: gameState.players ?? [],
+                currentPlayerId: gameState.currentPlayerId,
+                actionInProgress: gameState.actionInProgress,
+                actionHistory: gameState.actionHistory ?? [],
+                winner: gameState.winner,
+                hostId: gameState.hostId
+            });
+        } catch (err) {
+            console.error('Failed to apply game state update:', err);
+            set({ error: err.message });
+        }
+    },
 
     setError: (error) => set({ error }),
 
@@ -49,23 +59,35 @@ export const useGameStore = create((set, get) => ({
 
     setLoading: (loading) => set({ loading }),
 
-    reset: () => set({
-        socket: null,
-        connected: false,
-        playerId: null,
-        playerName: null,
-        roomCode: null,
-        gameId: null,
-        gameState: null,
-        players: [],
-        currentPlayerId: null,
-        actionInProgress: null,
-        actionHistory: [],
-        winner: null,
-        hostId: null,
-        error: null,
-        loading: false
-    }),
+    reset: () => {
+        localStorage.removeItem('coup_session');
+        set({
+            socket: null,
+            connected: false,
+            playerId: null,
+            playerName: null,
+            roomCode: null,
+            gameId: null,
+            gameState: null,
+            players: [],
+            currentPlayerId: null,
+            actionInProgress: null,
+            actionHistory: [],
+            winner: null,
+            hostId: null,
+            error: null,
+            loading: false
+        });
+    },
+
+    saveSession: () => {
+        const { gameId, playerId, roomCode, playerName } = get();
+        if (gameId && playerId) {
+            localStorage.setItem('coup_session', JSON.stringify({ gameId, playerId, roomCode, playerName }));
+        }
+    },
+
+    clearSession: () => localStorage.removeItem('coup_session'),
 
     // Computed values
     getCurrentPlayer: () => {

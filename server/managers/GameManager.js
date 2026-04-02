@@ -75,13 +75,16 @@ export class GameManager {
         return game;
     }
 
-    // Clean up old games (optional, for future use)
-    cleanupOldGames(maxAge = 24 * 60 * 60 * 1000) { // 24 hours
+    // Clean up games that have been inactive or finished
+    cleanupOldGames(maxInactivity = 30 * 60 * 1000) { // 30 minutes
         const now = Date.now();
         for (const [gameId, game] of this.games.entries()) {
-            // Check if createdAt exists, fallback to now if not (though it should exist from Game model)
-            const gameAge = now - (game.createdAt || now);
-            if (gameAge > maxAge || game.status === 'FINISHED') {
+            const inactive = now - (game.lastActivity || game.createdAt || now);
+            if (inactive > maxInactivity || game.status === 'FINISHED') {
+                if (game.pendingTimer) {
+                    clearTimeout(game.pendingTimer);
+                    game.pendingTimer = null;
+                }
                 this.roomCodes.delete(game.roomCode);
                 this.games.delete(gameId);
             }
