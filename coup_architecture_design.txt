@@ -1,0 +1,83 @@
+================================================================================
+COUP MULTIPLAYER WEB APP: SYSTEM ARCHITECTURE & DESIGN DOCUMENT
+================================================================================
+
+1. WHAT IS THIS APP AND HOW DOES IT WORK?
+-----------------------------------------
+This application is a real-time, online multiplayer web implementation of the popular social deduction and bluffing card game, "Coup". 
+
+Core Gameplay:
+- Supports 2 to 6 players per room.
+- Each player starts with 2 coins and 2 secret character cards (Duke, Assassin, Captain, Ambassador, or Contessa) which represent their "influence".
+- Players take turns performing actions to gain coins or eliminate other players' influence (making them reveal a card and discard it).
+- The catch is that a player can claim to have any character card to use their ability (like taxing with the Duke to get 3 coins).
+- Other players can call their bluff by issuing a "Challenge". If the player was bluffing, they lose an influence. If they were telling the truth, the challenger loses an influence.
+- Certain characters can also "Block" actions (like the Contessa blocking the Assassin).
+- The game ends when only one player remains with at least one influence card.
+
+How it Works Technically:
+The game is completely real-time. A player creates a room and shares a 4-letter code with others to join. Once the game starts, players see their own cards but not others' cards (unless revealed). When a player takes an action, the system automatically opens "windows" of time for opponents to challenge or block the action before it resolves. The entire game is fully synchronized across all connected players' browsers instantly.
+
+
+2. SYSTEM ARCHITECTURE
+-----------------------------------------
+The application uses a Client-Server architecture with an Authoritative Server Pattern.
+
+Why Authoritative Server?
+In a game with hidden information (secret cards), the client browsers cannot be trusted with the full game state. If the clients knew everything, players could inspect their browser's memory to cheat. Therefore, the server holds the absolute single source of truth for the game state. Clients only send "intentions" (actions), which the server strictly validates before updating the game and broadcasting the resulting "safe" state to everyone.
+
+Core Technologies:
+- Frontend: React.js (built with Vite), Zustand (State Management)
+- Backend: Node.js, Express.js
+- Real-Time Communication: Socket.IO (WebSockets)
+- Data Storage: In-Memory (No persistent database needed for current session-based rooms)
+
+
+3. DETAILED COMPONENT BREAKDOWN
+-----------------------------------------
+
+A. BACKEND (Server)
+Located in the `/server` directory, it handles all game logic validation, room management, and state manipulation.
+
+- Initialization (`server.js`):
+  Sets up the Express HTTP server and binds Socket.IO for WebSocket connections. It listens to a defined set of events emitted by clients, primarily:
+  `createRoom`, `joinRoom`, `startGame`, `takeAction`, `challenge`, `block`, `challengeBlock`, `revealCard`, `selectCards`, and `pass`.
+
+- Game Management (`managers/GameManager.js`):
+  Responsible for the lifecycle of game rooms. It handles creating new games, generating 4-letter room codes, tracking active games in a JavaScript Map or dictionary, and managing which players are inside which room.
+
+- Models (`models/Game.js`, `models/Player.js`):
+  Object-Oriented classes representing the core entities:
+  * Game: Holds the deck of cards, the discard pile, current player turn index, treasury coins, action history, and the intricate state of passing turns (like whether the game is waiting for challenges or blocks).
+  * Player: Holds individual player sockets, their coin count, whether they are eliminated, and their cards.
+
+- Action Handlers (`utils/actions.js`):
+  This is the most complex part of the backend. It contains the logic for standard actions (Income, Foreign Aid, Coup) and character actions (Tax, Assassinate, Steal, Exchange). More importantly, it manages the State Machine of a turn workflow:
+  (Action Requested) -> (Wait for Challenges) -> (Wait for Blocks) -> (Resolve Action).
+
+B. FRONTEND (Client)
+Located in the `/client` directory, it strictly acts as a "dumb" viewing layer governed entirely by the server's broadcasts.
+
+- Real-Time Sync (`src/App.jsx` & `Socket Events`):
+  The client establishes a persistent WebSocket connection. Upon any change in the game, the server emits a `gameStateUpdate` event.
+
+- State Management (`src/store/gameStore.js`):
+  Uses Zustand to store the current snapshot of the game locally. Whenever `gameStateUpdate` is received from the Socket, it completely overwrites the Zustand store, triggering React to re-render the components instantly.
+
+- Views & Components (`src/components/`):
+  React components respond reactively to the Zustand state.
+  * GameBoard: Main layout grid.
+  * PlayerHand/PlayerList: Displays available cards, who is eliminated, who has how many coins.
+  * ActionButtons: Displays the available buttons. If it's not the player's turn, these are disabled.
+  * ChallengePanel: A transient UI component that pops up when a player tries a potentially bluffable action, allowing opponents to hit "Challenge" or "Block".
+
+
+4. DATA & EVENT FLOW (Example: Duke's Tax Action)
+-----------------------------------------
+1. Claim Phase: Player 1 clicks "Tax". The React client emits `{ event: 'takeAction', action: 'TAX', playerId: '123' }`.
+2. Server Validation: `server.js` receives this. It uses `GameManager` to find the room, then `ActionHandler` to verify if it's actually Player 1's turn.
+3. Challenge Window: The server updates the game state to `WAITING_CHALLENGE` and starts a local timer (e.g., 5-10 seconds) on the server.
+4. Broadcast: Server emits `gameStateUpdate`.
+5. UI Update: Player 2, 3, 4's browsers receive the update. Zustand triggers a re-render showing the ChallengePanel.
+6. Execution: If no one challenges or blocks within the timer, or if opponents click "Pass", the server removes 3 coins from the treasury, gives them to Player 1, cycles the turn index to the next player, sets state to `ACTIVE_TURN`, and broadcasts the final update.
+7. Next Turn: The UI updates and it is now Player 2's turn.

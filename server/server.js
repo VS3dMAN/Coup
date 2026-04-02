@@ -8,16 +8,27 @@ import { ActionHandler } from './utils/actions.js';
 
 const app = express();
 const httpServer = createServer(app);
+// Allowed origins for CORS
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://your-app.vercel.app'
+];
+if (process.env.CLIENT_URL) {
+    process.env.CLIENT_URL.split(',').forEach(url => allowedOrigins.push(url.trim()));
+}
+
 const io = new Server(httpServer, {
     cors: {
-        origin: process.env.CLIENT_URL
-            ? [process.env.CLIENT_URL, 'http://localhost:3000', 'http://localhost:5173']
-            : ['http://localhost:3000', 'http://localhost:5173'],
-        methods: ['GET', 'POST']
+        origin: allowedOrigins,
+        methods: ['GET', 'POST'],
+        credentials: true
     }
 });
 
-app.use(cors());
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+}));
 app.use(express.json());
 
 // Initialize game manager
@@ -455,7 +466,7 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
