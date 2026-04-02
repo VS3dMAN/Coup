@@ -10,8 +10,7 @@ const app = express();
 const httpServer = createServer(app);
 // Allowed origins for CORS
 const allowedOrigins = [
-    'http://localhost:5173',
-    'https://your-app.vercel.app'
+    'http://localhost:5173'
 ];
 if (process.env.CLIENT_URL) {
     process.env.CLIENT_URL.split(',').forEach(url => allowedOrigins.push(url.trim()));
