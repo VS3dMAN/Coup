@@ -5,6 +5,9 @@ export class GameManager {
     constructor() {
         this.games = new Map(); // gameId -> Game
         this.roomCodes = new Map(); // roomCode -> gameId
+        
+        // Clean up memory leaks every 10 minutes
+        setInterval(() => this.cleanupOldGames(), 10 * 60 * 1000);
     }
 
     // Generate a unique 4-character room code
