@@ -22,17 +22,8 @@ export const PlayerHand = () => {
                         className={`card ${card.revealed ? 'revealed' : ''}`}
                     >
                         <div className="card-content">
-                            {card.revealed ? (
-                                <>
-                                    <span className="card-emoji">💀</span>
-                                    <span className="card-type">{card.type}</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span className="card-emoji">🎴</span>
-                                    <span className="card-type">{card.type}</span>
-                                </>
-                            )}
+                            <span className="card-emoji">{card.revealed ? '💀' : '🎴'}</span>
+                            <span className="card-type">{card.type}</span>
                         </div>
                     </div>
                 ))}

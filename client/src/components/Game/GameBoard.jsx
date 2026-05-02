@@ -6,7 +6,10 @@ import { PlayerHand } from './PlayerHand';
 import { ActionButtons } from './ActionButtons';
 import { ChallengePanel } from './ChallengePanel';
 import { GameLog } from './GameLog';
+import { ChatBox } from './ChatBox';
+import { Flourish, WaxSeal } from '../Common/Heraldry';
 import '../../styles/game.css';
+import '../../styles/theme.css';
 
 export const GameBoard = () => {
     const { roomCode } = useParams();
@@ -18,6 +21,7 @@ export const GameBoard = () => {
     const players = useGameStore(state => state.players);
     const isHost = useGameStore(state => state.isHost);
     const winner = useGameStore(state => state.winner);
+    const myPlayer = useGameStore(state => state.getMyPlayer());
 
     const [showStartButton, setShowStartButton] = useState(false);
 
@@ -28,7 +32,6 @@ export const GameBoard = () => {
     }, [socket, playerId, navigate]);
 
     useEffect(() => {
-        // Show start button for host in lobby
         setShowStartButton(isHost() && gameState === 'LOBBY' && players.length >= 2);
     }, [gameState, players.length, isHost]);
 
@@ -50,6 +53,7 @@ export const GameBoard = () => {
         return (
             <div className="lobby-waiting">
                 <h2>Room: {roomCode}</h2>
+                <div className="lobby-flourish"><Flourish width={240} /></div>
                 <p>Waiting for players... ({players.length}/6)</p>
                 <PlayerList />
                 {showStartButton && (
@@ -58,25 +62,75 @@ export const GameBoard = () => {
                     </button>
                 )}
                 {!isHost() && <p>Waiting for host to start the game...</p>}
+                <ChatBox />
             </div>
         );
     }
 
     if (gameState === 'GAME_OVER') {
         const winnerPlayer = players.find(p => p.id === winner);
+        const isWinner = winner === playerId;
         return (
             <div className="game-over">
                 <h1>Game Over!</h1>
-                <h2>{winnerPlayer?.name} wins!</h2>
+                <h2>{isWinner ? 'You win!' : `${winnerPlayer?.name} wins!`}</h2>
+                <div className="game-over-players">
+                    {players.map(p => (
+                        <div key={p.id} className={`game-over-player ${p.isAlive ? 'alive' : 'eliminated'} ${p.id === winner ? 'winner' : ''}`}>
+                            <span className="game-over-player-name">{p.name}</span>
+                            <span className="game-over-player-status">
+                                {p.id === winner ? 'Winner' : 'Eliminated'}
+                            </span>
+                        </div>
+                    ))}
+                </div>
                 <button onClick={() => navigate('/')}>Back to Lobby</button>
             </div>
         );
     }
 
+    const isEliminated = myPlayer && !myPlayer.isAlive;
+    const opponents = players.filter(p => p.id !== playerId);
+    const currentPlayerId = useGameStore.getState().currentPlayerId;
+    const currentPlayer = players.find(p => p.id === currentPlayerId);
+    const isMyTurn = currentPlayerId === playerId;
+
     return (
         <div className="game-board">
             <div className="game-header">
                 <h2>COUP - Room: {roomCode}</h2>
+                {currentPlayer && (
+                    <span className="current-turn-seal">
+                        <WaxSeal size={36} label={isMyTurn ? '★' : (currentPlayer.name?.[0] || '·').toUpperCase()} />
+                        {isMyTurn ? 'Your Turn' : `${currentPlayer.name}'s Turn`}
+                    </span>
+                )}
+            </div>
+
+            {isEliminated && (
+                <div className="eliminated-banner">
+                    <div className="eliminated-banner-content">
+                        <span className="eliminated-icon">&#x1F480;</span>
+                        <h2>You have been eliminated!</h2>
+                        <p>You lost both influences. Spectate the rest of the game below.</p>
+                        <button onClick={() => navigate('/')} className="leave-btn">
+                            Leave Game
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Mobile: horizontal opponent bar at top */}
+            <div className="mobile-opponents">
+                {opponents.map(p => (
+                    <div key={p.id} className={`mobile-opponent ${!p.isAlive ? 'eliminated' : ''} ${p.id === useGameStore.getState().currentPlayerId ? 'active' : ''}`}>
+                        <span className="mobile-opponent-name">{p.name}</span>
+                        <span className="mobile-opponent-stats">
+                            {p.coins} / {p.influence}
+                        </span>
+                        {!p.isConnected && <span className="mobile-dc">DC</span>}
+                    </div>
+                ))}
             </div>
 
             <div className="game-content">
@@ -86,11 +140,20 @@ export const GameBoard = () => {
                 </div>
 
                 <div className="main-panel">
-                    <PlayerHand />
                     <ChallengePanel />
+                    <GameLog className="mobile-game-log" />
+                    {!isEliminated && <PlayerHand />}
                     <ActionButtons />
                 </div>
             </div>
+
+            {/* Mobile: fixed bottom bar with hand + actions */}
+            <div className="mobile-bottom-bar">
+                {!isEliminated && <PlayerHand />}
+                <ActionButtons />
+            </div>
+
+            <ChatBox />
         </div>
     );
 };

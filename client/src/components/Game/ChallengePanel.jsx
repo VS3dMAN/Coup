@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../../store/gameStore';
+import { Flourish } from '../Common/Heraldry';
 
 export const ChallengePanel = () => {
     const socket = useGameStore(state => state.socket);
@@ -49,6 +50,7 @@ export const ChallengePanel = () => {
                     <h3>Challenge Window</h3>
                     <span className="timer">{timer}s</span>
                 </div>
+                <div className="panel-flourish"><Flourish width={240} color="var(--c-accent)" /></div>
                 <p>
                     {actor?.name} is claiming {actionInProgress.claimedCharacter} for {actionInProgress.type}
                     {target && ` targeting ${target.name}`}
@@ -86,11 +88,12 @@ export const ChallengePanel = () => {
         if (!canBlock || !canIBlock) return null;
 
         return (
-            <div className="challenge-panel">
+            <div className="challenge-panel block-variant">
                 <div className="panel-header">
                     <h3>Block Window</h3>
                     <span className="timer">{timer}s</span>
                 </div>
+                <div className="panel-flourish"><Flourish width={240} color="var(--c-navy)" /></div>
                 <p>
                     {actor?.name} is using {actionInProgress.type}
                     {target && ` on ${target.name}`}
@@ -152,6 +155,7 @@ export const ChallengePanel = () => {
                     <h3>Challenge Block</h3>
                     <span className="timer">{timer}s</span>
                 </div>
+                <div className="panel-flourish"><Flourish width={240} color="var(--c-accent)" /></div>
                 <p>
                     {blocker?.name} is blocking with {actionInProgress.blockAttempt.blockingCharacter}
                 </p>
@@ -188,6 +192,7 @@ export const ChallengePanel = () => {
         return (
             <div className="challenge-panel reveal-panel">
                 <h3>Choose a Card to Reveal</h3>
+                <div className="panel-flourish"><Flourish width={240} color="var(--c-gold)" /></div>
                 <div className="reveal-cards">
                     {myPlayer?.cards.map((card, idx) => (
                         !card.revealed && (

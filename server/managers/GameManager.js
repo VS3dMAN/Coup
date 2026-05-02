@@ -69,6 +69,19 @@ export class GameManager {
         }
     }
 
+    // Reconnect a player to an active game (bypass lobby check)
+    reconnectPlayerToGame(gameId, playerId, newSocketId) {
+        const game = this.games.get(gameId);
+        if (!game) throw new Error('Game not found');
+
+        const player = game.players.find(p => p.id === playerId);
+        if (!player) throw new Error('Player not found in game');
+
+        player.socketId = newSocketId;
+        player.isConnected = true;
+        return { game, player };
+    }
+
     // Start a game
     startGame(gameId) {
         const game = this.games.get(gameId);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGameStore } from '../../store/gameStore';
+import { Flourish } from '../Common/Heraldry';
 
 export const JoinRoom = () => {
     const [playerName, setPlayerName] = useState('');
@@ -47,6 +48,7 @@ export const JoinRoom = () => {
     return (
         <div className="join-room">
             <h2>Join Room</h2>
+            <div className="form-flourish"><Flourish width={160} /></div>
             <form onSubmit={handleJoin}>
                 <input
                     type="text"

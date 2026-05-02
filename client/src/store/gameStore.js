@@ -22,6 +22,9 @@ export const useGameStore = create((set, get) => ({
     winner: null,
     hostId: null,
 
+    // Chat state
+    chatMessages: [],
+
     // UI state
     error: null,
     loading: false,
@@ -53,6 +56,12 @@ export const useGameStore = create((set, get) => ({
         }
     },
 
+    addChatMessage: (message) => set(state => ({
+        chatMessages: [...state.chatMessages.slice(-99), message]
+    })),
+
+    clearChat: () => set({ chatMessages: [] }),
+
     setError: (error) => set({ error }),
 
     clearError: () => set({ error: null }),
@@ -75,6 +84,7 @@ export const useGameStore = create((set, get) => ({
             actionHistory: [],
             winner: null,
             hostId: null,
+            chatMessages: [],
             error: null,
             loading: false
         });

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { ACTIONS } from '../../utils/constants';
+import { Flourish } from '../Common/Heraldry';
 
 export const ActionButtons = () => {
     const socket = useGameStore(state => state.socket);
@@ -107,6 +108,7 @@ export const ActionButtons = () => {
     return (
         <div className="action-buttons">
             <h3>Your Turn - Choose Action</h3>
+            <div className="ribbon-flourish"><Flourish width={220} /></div>
             {mustCoup && <p className="must-coup">⚠️ You have 10+ coins and must COUP!</p>}
             {error && <p className="error">{error}</p>}
 

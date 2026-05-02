@@ -208,6 +208,37 @@ io.on('connection', (socket) => {
         }
     });
 
+    // RECONNECT (dedicated event for mid-game reconnection)
+    socket.on('reconnect_attempt', (data, callback) => {
+        try {
+            const { gameId, playerId } = data;
+            const { game, player } = gameManager.reconnectPlayerToGame(gameId, playerId, socket.id);
+
+            socket.join(game.roomCode);
+
+            callback({
+                success: true,
+                gameId: game.gameId,
+                playerId: player.id,
+                roomCode: game.roomCode,
+                playerName: player.name
+            });
+
+            // Notify all players of reconnection
+            game.players.forEach(p => {
+                io.to(p.socketId).emit('playerReconnected', {
+                    playerId: player.id,
+                    playerName: player.name
+                });
+                io.to(p.socketId).emit('gameStateUpdate', game.getGameStateForPlayer(p.id));
+            });
+
+            console.log(`${player.name} reconnected to room: ${game.roomCode}`);
+        } catch (error) {
+            callback({ success: false, error: error.message });
+        }
+    });
+
     // JOIN ROOM
     socket.on('joinRoom', (data, callback) => {
         try {
@@ -578,6 +609,24 @@ io.on('connection', (socket) => {
         }
     });
 
+    // SEND CHAT MESSAGE
+    socket.on('sendChatMessage', (data) => {
+        const { roomCode, playerId, playerName, message } = data;
+        if (!roomCode || !message || !message.trim()) return;
+
+        const game = gameManager.getGameByRoomCode(roomCode);
+        if (!game) return;
+
+        const chatMessage = {
+            playerId,
+            playerName,
+            message: message.trim().substring(0, 500),
+            timestamp: Date.now()
+        };
+
+        io.to(roomCode).emit('chatMessage', chatMessage);
+    });
+
     // DISCONNECT
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
@@ -598,9 +647,28 @@ io.on('connection', (socket) => {
                     }
                 });
 
-                // Auto-resolve if game is waiting on this player (5s grace period)
+                // In LOBBY, remove the player after a grace period
+                if (game.status === 'LOBBY') {
+                    const disconnectedPlayerId = player.id;
+                    setTimeout(() => {
+                        const cg = gameManager.getGame(gameId);
+                        if (!cg) return;
+                        const p = cg.players.find(pl => pl.id === disconnectedPlayerId);
+                        if (!p || p.isConnected) return; // reconnected
+                        gameManager.removePlayerFromGame(gameId, disconnectedPlayerId);
+                        broadcastGameState(cg);
+                    }, 30000);
+                    continue;
+                }
+
+                // In ACTIVE game, keep the player but auto-resolve after grace period
                 if (game.status === 'ACTIVE' && player.isAlive) {
                     const disconnectedPlayerId = player.id;
+
+                    // Broadcast updated state showing disconnection immediately
+                    broadcastGameState(game);
+
+                    // 15s grace period before auto-resolving game actions
                     setTimeout(() => {
                         const cg = gameManager.getGame(gameId);
                         if (!cg) return;
@@ -650,7 +718,7 @@ io.on('connection', (socket) => {
                             handler.selectExchangeCards(disconnectedPlayerId, autoIndices);
                             broadcastGameState(cg);
                         }
-                    }, 5000);
+                    }, 15000);
                 }
             }
         }

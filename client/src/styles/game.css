@@ -10,7 +10,7 @@
 
 .game-header {
     text-align: center;
-    padding: 20px;
+    padding: 15px;
     border-bottom: 3px solid #667eea;
     margin-bottom: 20px;
 }
@@ -37,6 +37,16 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+}
+
+/* Mobile opponents bar — hidden on desktop */
+.mobile-opponents {
+    display: none;
+}
+
+/* Mobile bottom bar — hidden on desktop */
+.mobile-bottom-bar {
+    display: none;
 }
 
 /* Player List */
@@ -173,15 +183,8 @@
 }
 
 @keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.5;
-    }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
 /* Action Buttons */
@@ -239,15 +242,8 @@
 }
 
 @keyframes attention {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
 }
 
 .action-name {
@@ -309,15 +305,8 @@
 }
 
 @keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .panel-header {
@@ -452,7 +441,7 @@
     color: white;
 }
 
-/* Game Log */
+/* Game Log — Enhanced with color coding */
 .game-log {
     background: #f8f9fa;
     padding: 20px;
@@ -472,6 +461,7 @@
     flex: 1;
     overflow-y: auto;
     max-height: 300px;
+    scroll-behavior: smooth;
 }
 
 .log-empty {
@@ -487,8 +477,26 @@
     border-radius: 6px;
     border-left: 4px solid #ddd;
     font-size: 0.95em;
+    line-height: 1.4;
 }
 
+/* Color-coded log entries */
+.log-entry.log-positive {
+    border-left-color: #4CAF50;
+    background: #f1f8f1;
+}
+
+.log-entry.log-hostile {
+    border-left-color: #f44336;
+    background: #fef5f5;
+}
+
+.log-entry.log-warning {
+    border-left-color: #ff9800;
+    background: #fffbf0;
+}
+
+/* Legacy result-based classes */
 .log-entry.success {
     border-left-color: #4CAF50;
 }
@@ -508,20 +516,286 @@
 
 .log-action {
     color: #667eea;
-    margin: 0 5px;
 }
 
 .log-target {
     color: #f44336;
-    margin: 0 5px;
+    font-weight: 600;
 }
 
-.log-result {
+.log-details {
     color: #666;
     font-style: italic;
 }
 
-/* Responsive */
+.log-result {
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-left: 4px;
+}
+
+.log-result-success {
+    color: #4CAF50;
+}
+
+.log-result-failed {
+    color: #f44336;
+}
+
+.log-result-blocked {
+    color: #ff9800;
+}
+
+/* Chat Box */
+.chat-box {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    font-family: inherit;
+}
+
+.chat-toggle {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 10px 20px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-toggle:hover {
+    background: #5a6fd6;
+    transform: scale(1.05);
+}
+
+.chat-badge {
+    background: #f44336;
+    color: white;
+    border-radius: 50%;
+    min-width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    font-weight: bold;
+}
+
+.chat-box.open .chat-toggle {
+    border-radius: 25px 25px 0 0;
+    width: 100%;
+}
+
+.chat-content {
+    background: white;
+    border: 2px solid #667eea;
+    border-top: none;
+    border-radius: 0 0 12px 12px;
+    width: 320px;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    max-height: 300px;
+    min-height: 150px;
+}
+
+.chat-empty {
+    text-align: center;
+    color: #999;
+    padding: 20px 0;
+    font-size: 0.9em;
+}
+
+.chat-message {
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    line-height: 1.3;
+    background: #f8f9fa;
+}
+
+.chat-message.own {
+    background: #e8eaf6;
+}
+
+.chat-message.system {
+    background: #fff3cd;
+    text-align: center;
+    font-style: italic;
+    font-size: 0.85em;
+    color: #856404;
+}
+
+.chat-sender {
+    font-weight: bold;
+    color: #764ba2;
+    margin-right: 4px;
+}
+
+.chat-text {
+    color: #333;
+    word-break: break-word;
+}
+
+.chat-system-text {
+    color: #856404;
+}
+
+.chat-input-form {
+    display: flex;
+    border-top: 1px solid #ddd;
+    padding: 8px;
+    gap: 6px;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    font-size: 0.9em;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.chat-input:focus {
+    border-color: #667eea;
+}
+
+.chat-send-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.85em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.chat-send-btn:hover:not(:disabled) {
+    background: #5a6fd6;
+}
+
+.chat-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Eliminated Banner */
+.eliminated-banner {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 2px solid #e94560;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 20px;
+    text-align: center;
+    animation: slideDown 0.5s ease-out;
+}
+
+.eliminated-banner-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.eliminated-icon {
+    font-size: 3em;
+}
+
+.eliminated-banner h2 {
+    color: #e94560;
+    font-size: 1.8em;
+    margin: 0;
+}
+
+.eliminated-banner p {
+    color: #a8a8b3;
+    font-size: 1.1em;
+    margin: 0;
+}
+
+.leave-btn {
+    margin-top: 10px;
+    padding: 10px 30px;
+    background: #e94560;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.leave-btn:hover {
+    background: #c81e45;
+}
+
+/* Game Over - Player List */
+.game-over-players {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 20px 0;
+    width: 100%;
+    max-width: 300px;
+}
+
+.game-over-player {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+}
+
+.game-over-player.winner {
+    background: rgba(76, 175, 80, 0.15);
+    border-color: #4CAF50;
+}
+
+.game-over-player.eliminated {
+    opacity: 0.6;
+}
+
+.game-over-player-name {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.game-over-player-status {
+    font-size: 0.9em;
+    color: #999;
+}
+
+.game-over-player.winner .game-over-player-status {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+/* ========================================
+   RESPONSIVE — Tablet (1024px)
+   ======================================== */
 @media (max-width: 1024px) {
     .game-content {
         grid-template-columns: 1fr;
@@ -532,7 +806,183 @@
     }
 }
 
+/* ========================================
+   RESPONSIVE — Mobile (768px)
+   ======================================== */
 @media (max-width: 768px) {
+    .game-board {
+        padding: 10px;
+        border-radius: 12px;
+        padding-bottom: 220px; /* space for fixed bottom bar */
+    }
+
+    .game-header {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .game-header h2 {
+        font-size: 1.3em;
+    }
+
+    /* Hide desktop layout components */
+    .game-content .left-panel {
+        display: none;
+    }
+
+    .game-content .main-panel .player-hand,
+    .game-content .main-panel .action-buttons {
+        display: none;
+    }
+
+    .game-content {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        gap: 10px;
+    }
+
+    /* Show mobile opponents bar */
+    .mobile-opponents {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px 5px;
+        margin-bottom: 10px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .mobile-opponents::-webkit-scrollbar {
+        display: none;
+    }
+
+    .mobile-opponent {
+        flex: 0 0 auto;
+        background: #f8f9fa;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        padding: 8px 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 80px;
+        transition: all 0.3s;
+    }
+
+    .mobile-opponent.active {
+        border-color: #4CAF50;
+        background: #e8f5e9;
+    }
+
+    .mobile-opponent.eliminated {
+        opacity: 0.4;
+        text-decoration: line-through;
+    }
+
+    .mobile-opponent-name {
+        font-weight: bold;
+        font-size: 0.85em;
+        white-space: nowrap;
+    }
+
+    .mobile-opponent-stats {
+        font-size: 0.8em;
+        color: #666;
+    }
+
+    .mobile-dc {
+        font-size: 0.7em;
+        color: #f44336;
+        font-weight: bold;
+    }
+
+    /* Show the mobile GameLog in main panel */
+    .game-content .main-panel .game-log {
+        display: flex;
+    }
+
+    .game-content .main-panel .game-log .log-content {
+        max-height: 200px;
+    }
+
+    /* Show mobile bottom bar */
+    .mobile-bottom-bar {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 10px;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+        z-index: 100;
+        max-height: 50vh;
+        overflow-y: auto;
+    }
+
+    .mobile-bottom-bar .player-hand {
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .mobile-bottom-bar .cards-container {
+        gap: 8px;
+    }
+
+    .mobile-bottom-bar .card {
+        width: 90px;
+        height: 120px;
+        padding: 8px;
+    }
+
+    .mobile-bottom-bar .card-emoji {
+        font-size: 2em;
+        margin-bottom: 4px;
+    }
+
+    .mobile-bottom-bar .card-type {
+        font-size: 0.85em;
+    }
+
+    .mobile-bottom-bar .action-buttons {
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .mobile-bottom-bar .actions-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .mobile-bottom-bar .action-btn {
+        padding: 10px 6px;
+        min-height: 60px;
+        border-radius: 8px;
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .mobile-bottom-bar .action-name {
+        font-size: 0.85em;
+    }
+
+    .mobile-bottom-bar .action-desc {
+        font-size: 0.7em;
+    }
+
+    .mobile-bottom-bar .target-list {
+        margin: 10px 0;
+    }
+
+    .mobile-bottom-bar .target-btn {
+        padding: 12px;
+        min-height: 44px;
+    }
+
+    /* Cards should wrap on mobile */
     .cards-container {
         flex-wrap: wrap;
     }
@@ -544,5 +994,120 @@
 
     .actions-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Challenge panel mobile tweaks */
+    .challenge-panel {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .panel-actions {
+        gap: 8px;
+    }
+
+    .panel-actions button {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 10px 16px;
+        font-size: 0.95em;
+    }
+
+    .reveal-cards {
+        gap: 8px;
+    }
+
+    .reveal-card-btn {
+        padding: 14px 20px;
+        font-size: 1em;
+        min-height: 44px;
+    }
+
+    .exchange-cards {
+        gap: 8px;
+    }
+
+    .exchange-card-btn {
+        padding: 14px 20px;
+        font-size: 1em;
+        min-height: 44px;
+    }
+
+    /* Eliminated banner mobile */
+    .eliminated-banner {
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .eliminated-icon {
+        font-size: 2em;
+    }
+
+    .eliminated-banner h2 {
+        font-size: 1.3em;
+    }
+
+    .eliminated-banner p {
+        font-size: 0.9em;
+    }
+
+    /* Chat box mobile */
+    .chat-box {
+        bottom: 10px;
+        right: 10px;
+    }
+
+    .chat-box.open {
+        left: 10px;
+        right: 10px;
+        bottom: 0;
+    }
+
+    .chat-box.open .chat-content {
+        width: auto;
+    }
+
+    .chat-messages {
+        max-height: 200px;
+    }
+}
+
+/* ========================================
+   RESPONSIVE — Small Mobile (480px)
+   ======================================== */
+@media (max-width: 480px) {
+    .app {
+        padding: 5px;
+    }
+
+    .game-board {
+        padding: 8px;
+        border-radius: 8px;
+    }
+
+    .game-header h2 {
+        font-size: 1.1em;
+    }
+
+    .mobile-bottom-bar .actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mobile-bottom-bar .card {
+        width: 75px;
+        height: 100px;
+    }
+
+    .mobile-bottom-bar .card-emoji {
+        font-size: 1.5em;
+    }
+
+    .mobile-opponent {
+        padding: 6px 10px;
+        min-width: 70px;
+    }
+
+    .mobile-opponent-name {
+        font-size: 0.75em;
     }
 }
