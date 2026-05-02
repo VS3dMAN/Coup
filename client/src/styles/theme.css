@@ -498,9 +498,7 @@ input[type="text"]::placeholder {
         0 12px 24px -10px rgba(0, 0, 0, 0.6),
         inset 0 0 0 2px rgba(201, 162, 74, 0.25) !important;
     color: var(--c-ink) !important;
-    width: 120px;
-    height: 172px;
-    padding: 14px 12px;
+    padding: 14px 10px 10px;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -511,12 +509,12 @@ input[type="text"]::placeholder {
 .card::before {
     content: 'ROLE';
     position: absolute;
-    top: 10px;
+    top: 6px;
     left: 0;
     right: 0;
     text-align: center;
     font-family: var(--font-display);
-    font-size: 9px;
+    font-size: 8px;
     letter-spacing: 0.3em;
     color: var(--c-goldDeep);
 }
@@ -528,16 +526,17 @@ input[type="text"]::placeholder {
     justify-content: center;
     flex: 1;
     width: 100%;
-    gap: 8px;
+    gap: 6px;
+    margin-top: 10px;
 }
 
 .card-emoji {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 70%;
-    height: 60px;
-    margin-top: 14px;
+    width: 80%;
+    flex: 1;
+    min-height: 0;
     background: repeating-linear-gradient(135deg, rgba(90, 20, 24, 0.08) 0 6px, transparent 6px 14px);
     border: 1px dashed rgba(74, 56, 40, 0.35);
     font-size: 28px;
@@ -1071,4 +1070,278 @@ input[type="text"]::placeholder {
     letter-spacing: 0.3em;
     text-transform: uppercase;
     color: var(--c-goldBright);
+}
+
+/* ── Desktop card sizing (≥769px) ─────────────────────────────── */
+@media (min-width: 769px) {
+    .card {
+        width: 120px;
+        height: 172px;
+    }
+
+    .card-emoji {
+        height: 60px;
+        flex: none;
+        margin-top: 6px;
+    }
+}
+
+/* ── Mobile cleanup (≤768px) ──────────────────────────────────── */
+@media (max-width: 768px) {
+
+    /* Tighten everything */
+    body::before {
+        background:
+            radial-gradient(100% 70% at 50% 60%, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+    }
+
+    .game-board {
+        padding-bottom: 280px !important;
+    }
+
+    .game-header {
+        padding: 10px 14px !important;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .game-header h2 {
+        font-size: 14px !important;
+        letter-spacing: 0.16em;
+        gap: 8px;
+    }
+
+    .current-turn-seal {
+        font-size: 9px;
+        letter-spacing: 0.2em;
+        gap: 6px;
+        margin-left: auto;
+    }
+
+    .current-turn-seal svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    /* Mobile opponents bar — parchment chips */
+    .mobile-opponents {
+        background: linear-gradient(180deg, rgba(26, 37, 64, 0.92) 0%, rgba(15, 22, 40, 0.92) 100%);
+        border: 1px solid var(--c-gold);
+        border-radius: 0;
+        padding: 8px !important;
+        gap: 6px !important;
+    }
+
+    .mobile-opponent {
+        background: color-mix(in srgb, var(--c-panel) 80%, transparent) !important;
+        border: 1px solid rgba(201, 162, 74, 0.5) !important;
+        border-radius: 0 !important;
+        padding: 6px 10px !important;
+        min-width: 72px !important;
+    }
+
+    .mobile-opponent-name {
+        font-size: 11px !important;
+        letter-spacing: 0.04em;
+    }
+
+    .mobile-opponent-stats {
+        font-family: var(--font-display);
+        font-size: 11px !important;
+        color: var(--c-inkSoft);
+    }
+
+    /* Game log + chronicle — compact */
+    .game-content .main-panel .game-log {
+        padding: 12px 14px;
+    }
+
+    .game-content .main-panel .game-log h3 {
+        font-size: 10px;
+        letter-spacing: 0.28em;
+    }
+
+    .game-content .main-panel .game-log .log-flourish {
+        margin: 4px 0 8px;
+    }
+
+    .game-content .main-panel .game-log .log-content {
+        max-height: 160px !important;
+    }
+
+    .log-entry {
+        font-size: 11px !important;
+        padding: 4px 0 4px 10px !important;
+        margin-bottom: 6px !important;
+    }
+
+    /* Mobile bottom bar — parchment panel, not white */
+    .mobile-bottom-bar {
+        background: linear-gradient(180deg, rgba(26, 20, 16, 0.96) 0%, rgba(15, 10, 6, 0.98) 100%) !important;
+        border-top: 1.5px solid var(--c-gold) !important;
+        box-shadow: 0 -10px 30px -8px rgba(0, 0, 0, 0.7) !important;
+        padding: 10px 10px 12px !important;
+        gap: 8px !important;
+        max-height: 56vh !important;
+    }
+
+    /* Player hand inside bottom bar */
+    .mobile-bottom-bar .player-hand {
+        padding: 4px 0 0 !important;
+    }
+
+    .mobile-bottom-bar .player-hand h3 {
+        font-size: 9px;
+        letter-spacing: 0.32em;
+        margin-bottom: 6px;
+    }
+
+    .mobile-bottom-bar .cards-container {
+        gap: 10px;
+        justify-content: center;
+    }
+
+    /* Card sizing on mobile bottom bar — large enough for label + emoji */
+    .mobile-bottom-bar .card {
+        width: 96px !important;
+        height: 130px !important;
+        padding: 12px 6px 8px !important;
+    }
+
+    .mobile-bottom-bar .card::before {
+        font-size: 7px;
+        top: 4px;
+        letter-spacing: 0.24em;
+    }
+
+    .mobile-bottom-bar .card .card-content {
+        margin-top: 6px;
+        gap: 4px;
+    }
+
+    .mobile-bottom-bar .card-emoji {
+        width: 80%;
+        font-size: 22px !important;
+        margin-top: 0 !important;
+    }
+
+    .mobile-bottom-bar .card-type {
+        font-size: 11px !important;
+        letter-spacing: 0.1em;
+    }
+
+    /* Action buttons on mobile bottom bar */
+    .mobile-bottom-bar .action-buttons {
+        padding: 12px 12px 10px !important;
+        outline-offset: 2px;
+    }
+
+    .mobile-bottom-bar .action-buttons h3 {
+        font-size: 10px;
+        letter-spacing: 0.24em;
+        margin-bottom: 4px;
+    }
+
+    .mobile-bottom-bar .action-buttons .ribbon-flourish {
+        margin: 4px 0 8px;
+    }
+
+    .mobile-bottom-bar .actions-grid {
+        gap: 6px !important;
+    }
+
+    .mobile-bottom-bar .action-btn {
+        padding: 8px 6px !important;
+        min-height: 56px !important;
+        gap: 2px;
+    }
+
+    .mobile-bottom-bar .action-name {
+        font-size: 10px !important;
+        letter-spacing: 0.04em;
+    }
+
+    .mobile-bottom-bar .action-desc {
+        font-size: 9px !important;
+        line-height: 1.2;
+    }
+
+    /* Hide the desktop player-hand cards inside main panel on mobile,
+       which the existing mobile rules already handle, but ensure no
+       blank duplicates remain visible. */
+    .game-content .main-panel .player-hand {
+        display: none !important;
+    }
+
+    /* Lobby waiting — tighter on mobile */
+    .lobby-waiting {
+        margin: 16px 10px !important;
+        padding: 24px 20px !important;
+    }
+
+    .lobby-waiting h2 {
+        font-size: 1.5em !important;
+        letter-spacing: 0.12em;
+    }
+
+    /* Landing page — tighter on mobile */
+    .landing-page {
+        padding: 28px 20px !important;
+        margin: 16px 10px !important;
+    }
+
+    .landing-page h1 {
+        font-size: 2em !important;
+        letter-spacing: 0.18em;
+    }
+
+    .lobby-options {
+        flex-direction: column;
+        gap: 18px !important;
+    }
+
+    /* Challenge panel — fit phone width */
+    .challenge-panel {
+        padding: 16px 14px !important;
+        margin: 0 4px;
+    }
+
+    .panel-header h3 {
+        font-size: 14px;
+    }
+
+    .challenge-panel p {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+
+    /* Chat box — keep out of way */
+    .chat-box.open .chat-content {
+        max-height: 50vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-bottom-bar .card {
+        width: 78px !important;
+        height: 110px !important;
+        padding: 10px 4px 6px !important;
+    }
+
+    .mobile-bottom-bar .card-emoji {
+        font-size: 18px !important;
+    }
+
+    .mobile-bottom-bar .card-type {
+        font-size: 10px !important;
+        letter-spacing: 0.06em;
+    }
+
+    .mobile-bottom-bar .actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .mobile-bottom-bar .action-btn {
+        min-height: 50px !important;
+    }
 }
