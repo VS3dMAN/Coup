@@ -329,6 +329,16 @@
     border-radius: 20px;
 }
 
+.timer-urgent {
+    color: #ff1744;
+    animation: timerPulse 1s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.08); }
+}
+
 .panel-actions {
     display: flex;
     gap: 15px;
@@ -807,47 +817,32 @@
 }
 
 /* ========================================
-   RESPONSIVE — Mobile (768px)
+   RESPONSIVE — Mobile structural rules (768px)
+   Visual styling lives in theme.css; this file only collapses the
+   desktop grid and toggles which scaffolds are visible.
    ======================================== */
 @media (max-width: 768px) {
-    .game-board {
-        padding: 10px;
-        border-radius: 12px;
-        padding-bottom: 220px; /* space for fixed bottom bar */
-    }
-
-    .game-header {
-        padding: 10px;
-        margin-bottom: 10px;
-    }
-
-    .game-header h2 {
-        font-size: 1.3em;
-    }
-
-    /* Hide desktop layout components */
-    .game-content .left-panel {
-        display: none;
-    }
-
-    .game-content .main-panel .player-hand,
-    .game-content .main-panel .action-buttons {
-        display: none;
-    }
-
+    /* Collapse desktop two-column grid; the mobile flow uses
+       header/opponents/latest/main/dock instead. */
     .game-content {
         grid-template-columns: 1fr;
         min-height: auto;
         gap: 10px;
     }
 
-    /* Show mobile opponents bar */
+    /* Hide desktop sidebars on mobile — the mobile dock + chips replace them. */
+    .game-content .left-panel,
+    .game-content .main-panel .player-hand,
+    .game-content .main-panel .action-buttons {
+        display: none;
+    }
+
+    /* Mobile opponent strip — flex container, scrolls horizontally. */
     .mobile-opponents {
         display: flex;
         gap: 8px;
         overflow-x: auto;
-        padding: 10px 5px;
-        margin-bottom: 10px;
+        overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
     }
@@ -856,211 +851,41 @@
         display: none;
     }
 
-    .mobile-opponent {
-        flex: 0 0 auto;
-        background: #f8f9fa;
-        border: 2px solid #ddd;
-        border-radius: 10px;
-        padding: 8px 14px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        min-width: 80px;
-        transition: all 0.3s;
-    }
-
-    .mobile-opponent.active {
-        border-color: #4CAF50;
-        background: #e8f5e9;
-    }
-
-    .mobile-opponent.eliminated {
-        opacity: 0.4;
-        text-decoration: line-through;
-    }
-
-    .mobile-opponent-name {
-        font-weight: bold;
-        font-size: 0.85em;
-        white-space: nowrap;
-    }
-
-    .mobile-opponent-stats {
-        font-size: 0.8em;
-        color: #666;
-    }
-
-    .mobile-dc {
-        font-size: 0.7em;
-        color: #f44336;
-        font-weight: bold;
-    }
-
-    /* Show the mobile GameLog in main panel */
-    .game-content .main-panel .game-log {
-        display: flex;
-    }
-
-    .game-content .main-panel .game-log .log-content {
-        max-height: 200px;
-    }
-
-    /* Show mobile bottom bar */
+    /* Mobile bottom dock — fixed; theme.css paints it. */
     .mobile-bottom-bar {
         display: flex;
         flex-direction: column;
-        gap: 8px;
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        background: white;
-        padding: 10px;
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
         z-index: 100;
-        max-height: 50vh;
+        max-height: 56vh;
         overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
-    .mobile-bottom-bar .player-hand {
-        padding: 10px;
-        border-radius: 8px;
-    }
-
-    .mobile-bottom-bar .cards-container {
-        gap: 8px;
-    }
-
-    .mobile-bottom-bar .card {
-        width: 90px;
-        height: 120px;
-        padding: 8px;
-    }
-
-    .mobile-bottom-bar .card-emoji {
-        font-size: 2em;
-        margin-bottom: 4px;
-    }
-
-    .mobile-bottom-bar .card-type {
-        font-size: 0.85em;
-    }
-
-    .mobile-bottom-bar .action-buttons {
-        padding: 10px;
-        border-radius: 8px;
-    }
-
-    .mobile-bottom-bar .actions-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-    }
-
-    .mobile-bottom-bar .action-btn {
-        padding: 10px 6px;
-        min-height: 60px;
-        border-radius: 8px;
-        min-width: 44px;
-        min-height: 44px;
-    }
-
-    .mobile-bottom-bar .action-name {
-        font-size: 0.85em;
-    }
-
-    .mobile-bottom-bar .action-desc {
-        font-size: 0.7em;
-    }
-
-    .mobile-bottom-bar .target-list {
-        margin: 10px 0;
-    }
-
-    .mobile-bottom-bar .target-btn {
-        padding: 12px;
-        min-height: 44px;
-    }
-
-    /* Cards should wrap on mobile */
+    /* Cards wrap if they have to. */
     .cards-container {
         flex-wrap: wrap;
     }
 
-    .card {
-        width: 120px;
-        height: 160px;
-    }
-
-    .actions-grid {
+    /* Action grid → single column inside the dock; theme.css restyles. */
+    .mobile-bottom-bar .actions-grid {
         grid-template-columns: 1fr;
     }
 
-    /* Challenge panel mobile tweaks */
-    .challenge-panel {
-        padding: 12px;
-        border-radius: 8px;
-    }
-
-    .panel-actions {
-        gap: 8px;
-    }
-
-    .panel-actions button {
-        min-height: 44px;
-        min-width: 44px;
-        padding: 10px 16px;
-        font-size: 0.95em;
-    }
-
-    .reveal-cards {
-        gap: 8px;
-    }
-
-    .reveal-card-btn {
-        padding: 14px 20px;
-        font-size: 1em;
-        min-height: 44px;
-    }
-
-    .exchange-cards {
-        gap: 8px;
-    }
-
-    .exchange-card-btn {
-        padding: 14px 20px;
-        font-size: 1em;
-        min-height: 44px;
-    }
-
-    /* Eliminated banner mobile */
-    .eliminated-banner {
-        padding: 15px;
-        margin-bottom: 10px;
-    }
-
-    .eliminated-icon {
-        font-size: 2em;
-    }
-
-    .eliminated-banner h2 {
-        font-size: 1.3em;
-    }
-
-    .eliminated-banner p {
-        font-size: 0.9em;
-    }
-
-    /* Chat box mobile */
+    /* Hide the desktop grid's overflow chat inside dock — keep chat-box global. */
     .chat-box {
-        bottom: 10px;
-        right: 10px;
+        bottom: auto;
+        top: 8px;
+        right: 8px;
     }
 
     .chat-box.open {
         left: 10px;
         right: 10px;
-        bottom: 0;
+        top: 60px;
     }
 
     .chat-box.open .chat-content {
@@ -1068,46 +893,6 @@
     }
 
     .chat-messages {
-        max-height: 200px;
-    }
-}
-
-/* ========================================
-   RESPONSIVE — Small Mobile (480px)
-   ======================================== */
-@media (max-width: 480px) {
-    .app {
-        padding: 5px;
-    }
-
-    .game-board {
-        padding: 8px;
-        border-radius: 8px;
-    }
-
-    .game-header h2 {
-        font-size: 1.1em;
-    }
-
-    .mobile-bottom-bar .actions-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .mobile-bottom-bar .card {
-        width: 75px;
-        height: 100px;
-    }
-
-    .mobile-bottom-bar .card-emoji {
-        font-size: 1.5em;
-    }
-
-    .mobile-opponent {
-        padding: 6px 10px;
-        min-width: 70px;
-    }
-
-    .mobile-opponent-name {
-        font-size: 0.75em;
+        max-height: 220px;
     }
 }

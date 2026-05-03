@@ -5,13 +5,13 @@ import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import { GameManager } from './managers/GameManager.js';
 import { ActionHandler } from './utils/actions.js';
-import { GAME_STATES } from './utils/constants.js';
+import { GAME_STATES, DECISION_TIMEOUT_MS } from './utils/constants.js';
 
 const app = express();
 const httpServer = createServer(app);
 // Allowed origins for CORS
 const allowedOrigins = [
-    'http://localhost:5173'
+    'http://localhost:3000'
 ];
 if (process.env.CLIENT_URL) {
     process.env.CLIENT_URL.split(',').forEach(url => allowedOrigins.push(url.trim()));
@@ -82,19 +82,57 @@ function autoRevealCard(game, gameId) {
     broadcastGameState(game);
 }
 
+// Decision-phase states where timeout = auto-pass any straggler
+const DECISION_STATES = [
+    GAME_STATES.WAITING_CHALLENGE,
+    GAME_STATES.WAITING_BLOCK,
+    GAME_STATES.WAITING_BLOCK_CHALLENGE
+];
+
 // Helper: set a game timer with state guard and automatic phase chaining
-function setGameTimer(game, gameId, expectedState, handlerFn, timeout = 10000) {
+function setGameTimer(game, gameId, expectedState, handlerFn, timeout = DECISION_TIMEOUT_MS) {
     if (game.pendingTimer) {
         clearTimeout(game.pendingTimer);
         game.pendingTimer = null;
     }
+
+    // For decision phases, expose a deadline so the client can render a live countdown.
+    if (DECISION_STATES.includes(expectedState) && game.actionInProgress) {
+        game.actionInProgress.decisionDeadline = Date.now() + timeout;
+    }
+
     game.pendingTimer = setTimeout(() => {
         game.pendingTimer = null;
         const currentGame = gameManager.getGame(gameId);
         if (!currentGame || currentGame.gameState !== expectedState) return;
 
         const handler = new ActionHandler(currentGame);
-        const result = handlerFn(handler, currentGame);
+        let result;
+
+        if (DECISION_STATES.includes(expectedState)) {
+            // Treat timeout as "auto-pass everyone who hasn't decided yet."
+            // The last auto-pass triggers the same resolution branch as a manual pass,
+            // so we never resolve a phase before all eligible players are accounted for.
+            const eligible = handler.getEligiblePassPlayers();
+            const action = currentGame.actionInProgress;
+            const passed = (action && action.passedPlayers) || [];
+            const stragglers = eligible.filter(pid => !passed.includes(pid));
+
+            for (const pid of stragglers) {
+                const r = handler.handlePass(pid);
+                if (r && r.success && !r.waiting) {
+                    result = r;
+                    break;
+                }
+            }
+            // If no stragglers existed (everyone had passed but timer fired before
+            // resolution chained), fall back to the original handler.
+            if (!result) {
+                result = handlerFn(handler, currentGame);
+            }
+        } else {
+            result = handlerFn(handler, currentGame);
+        }
 
         // Chain timers for subsequent phases
         handlePostResult(currentGame, gameId, result);
@@ -109,10 +147,10 @@ function handlePostResult(game, gameId, result) {
 
     if (result.awaitingBlock) {
         setGameTimer(game, gameId, GAME_STATES.WAITING_BLOCK,
-            (h) => h.handleNoBlock(), 10000);
+            (h) => h.handleNoBlock(), result.timeout || DECISION_TIMEOUT_MS);
     } else if (result.awaitingBlockChallenge) {
         setGameTimer(game, gameId, GAME_STATES.WAITING_BLOCK_CHALLENGE,
-            (h) => h.handleNoBlockChallenge(), result.timeout || 10000);
+            (h) => h.handleNoBlockChallenge(), result.timeout || DECISION_TIMEOUT_MS);
     } else if (result.requiresReveal) {
         // Use direct timeout for reveal to avoid double-broadcast
         if (game.pendingTimer) {
@@ -377,7 +415,7 @@ io.on('connection', (socket) => {
                 const handler = result.awaitingChallenge
                     ? (h) => h.handleNoChallenge()
                     : (h) => h.handleNoBlock();
-                setGameTimer(game, gameId, expectedState, handler, result.timeout || 10000);
+                setGameTimer(game, gameId, expectedState, handler, result.timeout || DECISION_TIMEOUT_MS);
             } else {
                 // Handle Coup reveal, exchange card selection, etc.
                 handlePostResult(game, gameId, result);
@@ -449,7 +487,7 @@ io.on('connection', (socket) => {
             // Set timeout for block challenge window
             if (result.awaitingBlockChallenge) {
                 setGameTimer(game, gameId, GAME_STATES.WAITING_BLOCK_CHALLENGE,
-                    (h) => h.handleNoBlockChallenge(), result.timeout || 10000);
+                    (h) => h.handleNoBlockChallenge(), result.timeout || DECISION_TIMEOUT_MS);
             }
 
         } catch (error) {
@@ -686,7 +724,7 @@ io.on('connection', (socket) => {
 
                         // If waiting for their pass in challenge/block, auto-pass
                         if ([GAME_STATES.WAITING_CHALLENGE, GAME_STATES.WAITING_BLOCK,
-                             GAME_STATES.WAITING_BLOCK_CHALLENGE].includes(cg.gameState)) {
+                        GAME_STATES.WAITING_BLOCK_CHALLENGE].includes(cg.gameState)) {
                             const handler = new ActionHandler(cg);
                             const result = handler.handlePass(disconnectedPlayerId);
                             if (result.success) {

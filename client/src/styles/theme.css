@@ -228,6 +228,10 @@ input[type="text"]::placeholder {
     margin-bottom: 6px;
 }
 
+.lobby-waiting .lobby-room-heading::before {
+    content: 'Room: ';
+}
+
 .lobby-waiting p {
     color: var(--c-inkSoft);
     font-family: var(--font-body);
@@ -1086,83 +1090,351 @@ input[type="text"]::placeholder {
     }
 }
 
-/* ── Mobile cleanup (≤768px) ──────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────────────
+   MOBILE COUP — design-faithful port of `Mobile Coup.html`.
+   Default: hide mobile-only chrome.
+   ─────────────────────────────────────────────────────────────────*/
+
+/* Hide mobile-only scaffolds on desktop; default state. */
+.m-game-header,
+.m-latest,
+.mobile-opponents,
+.mobile-bottom-bar,
+.mobile-opponent-seal,
+.m-seat-strip,
+.timer-dial {
+    display: none;
+}
+
+/* ── Mobile (≤768px) ──────────────────────────────────────────── */
 @media (max-width: 768px) {
 
-    /* Tighten everything */
+    /* Soften the body backdrop a touch on phones. */
     body::before {
         background:
             radial-gradient(100% 70% at 50% 60%, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
     }
 
+    .app {
+        padding: 0 !important;
+    }
+
+    /* Game board becomes a flex column flowing top-to-bottom; the
+       fixed bottom dock floats over the bottom — give the board
+       enough bottom padding to clear it. */
     .game-board {
-        padding-bottom: 280px !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 0 320px !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
     }
 
+    /* Hide the desktop header on mobile — replaced by .m-game-header. */
     .game-header {
-        padding: 10px 14px !important;
-        flex-wrap: wrap;
-        gap: 8px;
+        display: none !important;
     }
 
-    .game-header h2 {
-        font-size: 14px !important;
-        letter-spacing: 0.16em;
+    /* ── Mobile header: crown · room · round · treasury · log ── */
+    .m-game-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         gap: 8px;
+        padding: 12px 14px 10px;
+        padding-top: max(12px, env(safe-area-inset-top));
+        background: linear-gradient(180deg, rgba(26, 37, 64, 0.95) 0%, rgba(15, 22, 40, 0.95) 100%);
+        border-bottom: 1px solid var(--c-gold);
+        box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.6);
+        position: sticky;
+        top: 0;
+        z-index: 50;
     }
 
-    .current-turn-seal {
-        font-size: 9px;
-        letter-spacing: 0.2em;
+    .m-game-header-room {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .m-game-header-crown {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+    }
+
+    .m-game-header-kicker {
+        font-family: var(--font-display);
+        font-size: 8px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--c-goldBright);
+        opacity: 0.7;
+        line-height: 1;
+        margin-bottom: 2px;
+    }
+
+    .m-game-header-code {
+        font-family: var(--font-display);
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--c-goldBright);
+        letter-spacing: 0.18em;
+        line-height: 1;
+    }
+
+    .m-game-header-round {
+        text-align: center;
+    }
+
+    .m-game-header-roundnum {
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--c-goldBright);
+        line-height: 1;
+    }
+
+    .m-game-header-treasury {
+        display: flex;
+        align-items: center;
         gap: 6px;
-        margin-left: auto;
+        padding: 5px 9px;
+        background: rgba(201, 162, 74, 0.12);
+        border: 1px solid rgba(201, 162, 74, 0.4);
     }
 
-    .current-turn-seal svg {
-        width: 26px;
-        height: 26px;
+    .m-game-header-treasurynum {
+        font-family: var(--font-display);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--c-goldBright);
+        line-height: 1;
     }
 
-    /* Mobile opponents bar — parchment chips */
+    /* ── Mobile opponents strip ── */
     .mobile-opponents {
-        background: linear-gradient(180deg, rgba(26, 37, 64, 0.92) 0%, rgba(15, 22, 40, 0.92) 100%);
-        border: 1px solid var(--c-gold);
-        border-radius: 0;
-        padding: 8px !important;
-        gap: 6px !important;
+        display: flex !important;
+        flex-shrink: 0;
+        padding: 10px 14px !important;
+        gap: 10px !important;
+        background: transparent !important;
+        border-bottom: 1px solid rgba(201, 162, 74, 0.18) !important;
+        border-top: none !important;
+        border-left: none !important;
+        border-right: none !important;
     }
 
     .mobile-opponent {
-        background: color-mix(in srgb, var(--c-panel) 80%, transparent) !important;
-        border: 1px solid rgba(201, 162, 74, 0.5) !important;
+        flex: 0 0 auto;
+        position: relative;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+        padding: 10px 12px !important;
+        min-width: 138px !important;
+        background: linear-gradient(180deg, rgba(243, 233, 210, 0.08) 0%, rgba(243, 233, 210, 0.02) 100%) !important;
+        border: 1px solid rgba(201, 162, 74, 0.25) !important;
         border-radius: 0 !important;
-        padding: 6px 10px !important;
-        min-width: 72px !important;
+        color: var(--c-goldBright) !important;
+        box-shadow: none !important;
+    }
+
+    .mobile-opponent.active {
+        background: linear-gradient(180deg, rgba(201, 162, 74, 0.18) 0%, rgba(201, 162, 74, 0.05) 100%) !important;
+        border-color: var(--c-gold) !important;
+        box-shadow: 0 0 0 2px rgba(201, 162, 74, 0.2), 0 0 24px rgba(201, 162, 74, 0.25) !important;
+    }
+
+    .mobile-opponent.eliminated {
+        opacity: 0.45;
+        filter: grayscale(0.7);
+    }
+
+    /* Wax seal pinned to top-right when this opponent is on turn. */
+    .mobile-opponent-seal {
+        display: inline-flex;
+        position: absolute;
+        top: -10px;
+        right: -8px;
+        z-index: 2;
+    }
+
+    .mobile-opponent-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .mobile-opponent-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
     }
 
     .mobile-opponent-name {
-        font-size: 11px !important;
+        font-family: var(--font-display) !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        color: var(--c-goldBright) !important;
         letter-spacing: 0.04em;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 90px;
     }
 
-    .mobile-opponent-stats {
+    .mobile-opponent-coins {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
         font-family: var(--font-display);
-        font-size: 11px !important;
-        color: var(--c-inkSoft);
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--c-goldBright);
     }
 
-    /* Game log + chronicle — compact */
+    .mobile-opponent-cards {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .mobile-mini-card {
+        flex: 1;
+        min-width: 22px;
+        height: 30px;
+        background: linear-gradient(160deg, var(--c-burgundy) 0%, var(--c-burgundyDeep) 80%);
+        border: 1px solid var(--c-gold);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-display);
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--c-goldBright);
+        text-align: center;
+        padding: 0 3px;
+    }
+
+    .mobile-mini-card.revealed {
+        background: linear-gradient(160deg, var(--c-parchmentDeep) 0%, var(--c-stone) 100%);
+        color: var(--c-inkSoft);
+        border-color: rgba(74, 56, 40, 0.4);
+        text-decoration: line-through;
+    }
+
+    .mobile-dc {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        font-family: var(--font-display);
+        font-size: 9px;
+        letter-spacing: 0.18em;
+        color: var(--c-accent);
+        background: rgba(0, 0, 0, 0.45);
+        padding: 2px 5px;
+        border: 0.5px solid var(--c-accent);
+    }
+
+    /* ── Latest action pill ── */
+    .m-latest {
+        display: flex !important;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 14px 0;
+        padding: 10px 12px;
+        background: rgba(15, 10, 6, 0.55);
+        border: 1px solid rgba(243, 233, 210, 0.5);
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+        flex-shrink: 0;
+    }
+
+    .m-latest-challenge {
+        border-color: var(--c-accent);
+    }
+
+    .m-latest-challenge .m-latest-label {
+        color: var(--c-accent);
+        border-color: var(--c-accent);
+    }
+
+    .m-latest-block {
+        border-color: #5a7ab0;
+    }
+
+    .m-latest-block .m-latest-label {
+        color: #5a7ab0;
+        border-color: #5a7ab0;
+    }
+
+    .m-latest-neutral .m-latest-label {
+        color: var(--c-goldBright);
+        border-color: var(--c-goldBright);
+    }
+
+    .m-latest-label {
+        font-family: var(--font-display);
+        font-size: 8px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding: 3px 6px;
+        border: 0.5px solid currentColor;
+        flex-shrink: 0;
+    }
+
+    .m-latest-text {
+        font-family: var(--font-body);
+        font-size: 13px;
+        color: var(--c-goldBright);
+        line-height: 1.35;
+        flex: 1;
+        text-transform: capitalize;
+    }
+
+    /* ── Game-content middle: hide the inline log on mobile because
+         it is duplicated by the latest pill + a future drawer.
+         Action panel + challenge panel still render here as the
+         scrollable middle. ── */
+    .game-content {
+        flex: 1;
+        padding: 12px 14px 14px;
+        gap: 10px !important;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    .game-content .main-panel {
+        gap: 10px;
+    }
+
+    /* Mobile log: hide the inline chronicle by default — latest pill
+       carries the recent feed; chat-box is also available. The full
+       log can still be opened by scrolling the GameLog visible there. */
     .game-content .main-panel .game-log {
-        padding: 12px 14px;
+        padding: 14px 14px;
     }
 
     .game-content .main-panel .game-log h3 {
         font-size: 10px;
-        letter-spacing: 0.28em;
+        letter-spacing: 0.32em;
     }
 
     .game-content .main-panel .game-log .log-flourish {
-        margin: 4px 0 8px;
+        margin: 4px 0 10px;
     }
 
     .game-content .main-panel .game-log .log-content {
@@ -1170,52 +1442,164 @@ input[type="text"]::placeholder {
     }
 
     .log-entry {
-        font-size: 11px !important;
-        padding: 4px 0 4px 10px !important;
+        font-size: 12px !important;
+        padding: 6px 0 6px 10px !important;
         margin-bottom: 6px !important;
     }
 
-    /* Mobile bottom bar — parchment panel, not white */
-    .mobile-bottom-bar {
-        background: linear-gradient(180deg, rgba(26, 20, 16, 0.96) 0%, rgba(15, 10, 6, 0.98) 100%) !important;
-        border-top: 1.5px solid var(--c-gold) !important;
-        box-shadow: 0 -10px 30px -8px rgba(0, 0, 0, 0.7) !important;
-        padding: 10px 10px 12px !important;
-        gap: 8px !important;
-        max-height: 56vh !important;
+    .log-entry.log-positive {
+        border-left-color: var(--c-gold) !important;
     }
 
-    /* Player hand inside bottom bar */
+    .log-entry.log-hostile {
+        border-left-color: var(--c-accent) !important;
+    }
+
+    .log-entry.log-warning {
+        border-left-color: var(--c-navy) !important;
+    }
+
+    /* ── Sticky bottom dock ── */
+    .mobile-bottom-bar {
+        display: flex !important;
+        flex-direction: column !important;
+        background: linear-gradient(180deg, rgba(15, 10, 6, 0.7) 0%, rgba(15, 10, 6, 0.95) 100%) !important;
+        border-top: 1px solid var(--c-gold) !important;
+        box-shadow: 0 -10px 30px -8px rgba(0, 0, 0, 0.7) !important;
+        padding: 12px 14px 16px !important;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+        gap: 12px !important;
+    }
+
+    /* Your-seat strip at top of the dock. */
+    .m-seat-strip {
+        display: flex !important;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: linear-gradient(180deg, rgba(201, 162, 74, 0.16) 0%, rgba(201, 162, 74, 0.04) 100%);
+        border: 1px solid rgba(201, 162, 74, 0.35);
+        position: relative;
+    }
+
+    .m-seat-strip.active {
+        border-color: var(--c-gold);
+        box-shadow: 0 0 0 2px rgba(201, 162, 74, 0.2), 0 0 30px rgba(201, 162, 74, 0.2);
+    }
+
+    .m-seat-meta {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .m-seat-name {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 15px;
+        color: var(--c-goldBright);
+        letter-spacing: 0.06em;
+    }
+
+    .m-seat-you {
+        color: rgba(243, 233, 210, 0.6);
+        font-weight: 400;
+        font-size: 12px;
+    }
+
+    .m-seat-stats {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .m-seat-coins {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-family: var(--font-display);
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--c-goldBright);
+    }
+
+    .m-seat-influence {
+        display: inline-flex;
+        gap: 3px;
+    }
+
+    .m-seat-seal {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* Player hand inside dock — divider rule above, then horizontal cards. */
     .mobile-bottom-bar .player-hand {
-        padding: 4px 0 0 !important;
+        padding: 0 !important;
+        position: relative;
     }
 
     .mobile-bottom-bar .player-hand h3 {
+        font-family: var(--font-display);
         font-size: 9px;
         letter-spacing: 0.32em;
-        margin-bottom: 6px;
+        text-transform: uppercase;
+        color: var(--c-goldBright);
+        opacity: 0.7;
+        margin: 0 0 6px;
+        text-align: center;
+        position: relative;
+    }
+
+    /* Decorative rule on either side of the "Your Hand" label. */
+    .mobile-bottom-bar .player-hand h3::before,
+    .mobile-bottom-bar .player-hand h3::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        height: 1px;
+        background: rgba(201, 162, 74, 0.25);
+        width: calc(50% - 56px);
+    }
+
+    .mobile-bottom-bar .player-hand h3::before {
+        left: 0;
+    }
+
+    .mobile-bottom-bar .player-hand h3::after {
+        right: 0;
     }
 
     .mobile-bottom-bar .cards-container {
-        gap: 10px;
+        gap: 14px !important;
         justify-content: center;
     }
 
-    /* Card sizing on mobile bottom bar — large enough for label + emoji */
+    /* Tilt the two cards slightly like a held hand — design uses ±2°. */
+    .mobile-bottom-bar .cards-container .card:nth-child(1) {
+        transform: rotate(-2deg);
+    }
+
+    .mobile-bottom-bar .cards-container .card:nth-child(2) {
+        transform: rotate(2deg);
+    }
+
     .mobile-bottom-bar .card {
         width: 96px !important;
-        height: 130px !important;
-        padding: 12px 6px 8px !important;
+        height: 138px !important;
+        padding: 14px 6px 8px !important;
     }
 
     .mobile-bottom-bar .card::before {
-        font-size: 7px;
-        top: 4px;
-        letter-spacing: 0.24em;
+        font-size: 8px;
+        top: 6px;
+        letter-spacing: 0.3em;
     }
 
     .mobile-bottom-bar .card .card-content {
-        margin-top: 6px;
+        margin-top: 8px;
         gap: 4px;
     }
 
@@ -1226,106 +1610,376 @@ input[type="text"]::placeholder {
     }
 
     .mobile-bottom-bar .card-type {
-        font-size: 11px !important;
-        letter-spacing: 0.1em;
-    }
-
-    /* Action buttons on mobile bottom bar */
-    .mobile-bottom-bar .action-buttons {
-        padding: 12px 12px 10px !important;
-        outline-offset: 2px;
-    }
-
-    .mobile-bottom-bar .action-buttons h3 {
-        font-size: 10px;
-        letter-spacing: 0.24em;
-        margin-bottom: 4px;
-    }
-
-    .mobile-bottom-bar .action-buttons .ribbon-flourish {
-        margin: 4px 0 8px;
-    }
-
-    .mobile-bottom-bar .actions-grid {
-        gap: 6px !important;
-    }
-
-    .mobile-bottom-bar .action-btn {
-        padding: 8px 6px !important;
-        min-height: 56px !important;
-        gap: 2px;
-    }
-
-    .mobile-bottom-bar .action-name {
-        font-size: 10px !important;
-        letter-spacing: 0.04em;
-    }
-
-    .mobile-bottom-bar .action-desc {
-        font-size: 9px !important;
-        line-height: 1.2;
-    }
-
-    /* Hide the desktop player-hand cards inside main panel on mobile,
-       which the existing mobile rules already handle, but ensure no
-       blank duplicates remain visible. */
-    .game-content .main-panel .player-hand {
-        display: none !important;
-    }
-
-    /* Lobby waiting — tighter on mobile */
-    .lobby-waiting {
-        margin: 16px 10px !important;
-        padding: 24px 20px !important;
-    }
-
-    .lobby-waiting h2 {
-        font-size: 1.5em !important;
+        font-size: 13px !important;
         letter-spacing: 0.12em;
     }
 
-    /* Landing page — tighter on mobile */
+    .mobile-bottom-bar .player-hand .reveal-prompt {
+        font-size: 11px;
+        margin-top: 6px;
+    }
+
+    /* ── Action panel inside dock — design uses full-width vertical
+         rows, not a grid. Each row: title + claim chip on left,
+         effect + risk on right. ── */
+    .mobile-bottom-bar .action-buttons {
+        background: transparent !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    .mobile-bottom-bar .action-buttons h3 {
+        font-family: var(--font-display);
+        font-size: 11px;
+        letter-spacing: 0.28em;
+        color: var(--c-burgundy);
+        text-align: center;
+        margin: 0;
+    }
+
+    .mobile-bottom-bar .action-buttons .ribbon-flourish {
+        margin: 6px 0 10px;
+    }
+
+    .mobile-bottom-bar .actions-grid {
+        gap: 8px !important;
+        grid-template-columns: 1fr !important;
+    }
+
+    .mobile-bottom-bar .action-btn {
+        padding: 12px 14px !important;
+        min-height: auto !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        text-align: left;
+        background: linear-gradient(180deg, var(--c-panel) 0%, var(--c-parchmentDeep) 100%) !important;
+        border: 1px solid var(--c-gold) !important;
+        outline: 1px solid rgba(0, 0, 0, 0.08) !important;
+        outline-offset: 2px;
+        box-shadow: 0 6px 16px -10px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    .mobile-bottom-bar .action-btn.required {
+        background: linear-gradient(180deg, color-mix(in srgb, var(--c-burgundy) 14%, var(--c-panel)) 0%, var(--c-parchmentDeep) 100%) !important;
+        border-color: var(--c-burgundy) !important;
+    }
+
+    .mobile-bottom-bar .action-name {
+        font-family: var(--font-display);
+        font-size: 14px !important;
+        font-weight: 700;
+        color: var(--c-ink);
+        letter-spacing: 0.05em;
+        flex: 1;
+    }
+
+    .mobile-bottom-bar .action-desc {
+        font-family: var(--font-body);
+        font-style: italic;
+        font-size: 11px !important;
+        color: var(--c-inkSoft);
+        text-transform: none;
+        letter-spacing: 0;
+        text-align: right;
+        flex-shrink: 0;
+        max-width: 50%;
+        line-height: 1.3;
+    }
+
+    /* Target selection inside dock. */
+    .mobile-bottom-bar .target-list {
+        margin: 8px 0;
+        gap: 6px;
+    }
+
+    .mobile-bottom-bar .target-btn {
+        padding: 12px !important;
+        min-height: 44px;
+        font-size: 13px;
+    }
+
+    /* ── Lobby waiting — design pattern: room-code hero, invite strip,
+         vertical players list, big gold start button. ── */
+    .lobby-waiting {
+        max-width: none !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        outline-offset: 0 !important;
+        padding: 24px 20px calc(24px + env(safe-area-inset-bottom)) !important;
+        min-height: 100vh;
+    }
+
+    .lobby-waiting h2 {
+        font-family: var(--font-display) !important;
+        font-size: 56px !important;
+        font-weight: 700;
+        letter-spacing: 0.22em !important;
+        line-height: 1.05;
+        margin-bottom: 4px !important;
+    }
+
+    /* Mobile: replace the desktop "Room: " inline prefix with a stacked
+       "Room Code" kicker above the big code. */
+    .lobby-waiting .lobby-room-heading::before {
+        content: 'Room Code';
+        display: block;
+        font-family: var(--font-display);
+        font-size: 11px;
+        letter-spacing: 0.4em;
+        text-transform: uppercase;
+        color: var(--c-goldDeep);
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .lobby-waiting p {
+        font-size: 14px !important;
+    }
+
+    .lobby-waiting .lobby-flourish {
+        margin: 8px 0 16px !important;
+    }
+
+    .lobby-waiting .player-list {
+        margin-top: 18px !important;
+    }
+
+    .lobby-waiting .player-item {
+        padding: 12px 14px !important;
+        gap: 14px;
+    }
+
+    /* Landing — design pattern: stacked Create on top, OR divider,
+       Join below. The mobile media in global.css already stacks the
+       options column-wise; we just refine spacing and typography. */
     .landing-page {
-        padding: 28px 20px !important;
-        margin: 16px 10px !important;
+        max-width: none !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        outline-offset: 0 !important;
+        padding: 32px 22px calc(32px + env(safe-area-inset-bottom)) !important;
+        min-height: 100vh;
+    }
+
+    .landing-page .kingdom-kicker {
+        font-size: 11px !important;
+        letter-spacing: 0.36em;
     }
 
     .landing-page h1 {
-        font-size: 2em !important;
-        letter-spacing: 0.18em;
+        font-size: 64px !important;
+        letter-spacing: 0.22em !important;
+        line-height: 1;
+        margin-bottom: 8px !important;
+    }
+
+    .landing-page .kingdom-flourish {
+        margin: 12px 0 28px !important;
     }
 
     .lobby-options {
-        flex-direction: column;
-        gap: 18px !important;
+        flex-direction: column !important;
+        gap: 24px !important;
     }
 
-    /* Challenge panel — fit phone width */
+    .divider {
+        transform: none !important;
+        position: relative;
+        text-align: center;
+        padding: 8px 0;
+    }
+
+    .divider::before,
+    .divider::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        height: 1px;
+        background: var(--c-gold);
+        opacity: 0.5;
+        width: calc(50% - 24px);
+    }
+
+    .divider::before {
+        left: 0;
+    }
+
+    .divider::after {
+        right: 0;
+    }
+
+    .create-room button[type="submit"],
+    .join-room button[type="submit"] {
+        width: 100%;
+        padding: 16px 20px !important;
+        font-size: 14px !important;
+    }
+
+    /* Bigger tap-friendly inputs on phones. */
+    input[type="text"] {
+        padding: 14px 16px !important;
+        font-size: 17px !important;
+    }
+
+    /* ── Challenge / block panels on mobile ── */
     .challenge-panel {
-        padding: 16px 14px !important;
-        margin: 0 4px;
+        padding: 18px 18px !important;
+        margin: 0;
+    }
+
+    .panel-header {
+        align-items: flex-start;
+        gap: 10px;
     }
 
     .panel-header h3 {
-        font-size: 14px;
+        font-size: 24px !important;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        line-height: 1.15;
+        flex: 1;
+    }
+
+    /* On mobile, prefer the circular dial; hide the digit pill. */
+    .timer {
+        display: none !important;
+    }
+
+    .timer-dial {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .timer-dial.timer-urgent svg {
+        animation: timerPulse 1s ease-in-out infinite;
+    }
+
+    .challenge-panel .panel-flourish {
+        margin: 6px 0 14px;
     }
 
     .challenge-panel p {
-        font-size: 13px;
-        padding: 10px 12px;
+        font-size: 16px !important;
+        line-height: 1.55 !important;
+        padding: 14px 14px !important;
+        background: rgba(255, 255, 255, 0.4) !important;
+        border: 1px solid rgba(74, 56, 40, 0.15) !important;
+        margin: 0 0 12px !important;
     }
 
-    /* Chat box — keep out of way */
-    .chat-box.open .chat-content {
-        max-height: 50vh;
+    .panel-actions {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .panel-actions button {
+        width: 100%;
+        padding: 16px 20px !important;
+        font-size: 14px !important;
+    }
+
+    .panel-actions .pass-btn {
+        padding: 14px 20px !important;
+        font-size: 13px !important;
+    }
+
+    .pass-info {
+        font-size: 10px !important;
+        letter-spacing: 0.28em !important;
+        text-transform: uppercase;
+    }
+
+    .reveal-cards,
+    .exchange-cards {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .reveal-card-btn,
+    .exchange-card-btn {
+        width: 100%;
+        padding: 14px 18px !important;
+        font-size: 14px !important;
+    }
+
+    /* Eliminated banner on mobile. */
+    .eliminated-banner {
+        padding: 24px 18px !important;
+    }
+
+    .eliminated-icon {
+        font-size: 2.2em;
+    }
+
+    .eliminated-banner h2 {
+        font-size: 1.3em !important;
+    }
+
+    .eliminated-banner p {
+        font-size: 0.95em;
+    }
+
+    /* Game over on mobile. */
+    .game-over {
+        margin: 0 !important;
+        padding: 40px 22px calc(40px + env(safe-area-inset-bottom)) !important;
+        border-radius: 0 !important;
+        outline-offset: 0 !important;
+        max-width: none !important;
+        min-height: 100vh;
+    }
+
+    .game-over h1 {
+        font-size: 2.2em !important;
+    }
+
+    .game-over h2 {
+        font-size: 1.4em !important;
     }
 }
 
+/* ── Small phones (≤480px) ────────────────────────────────────── */
 @media (max-width: 480px) {
+    .m-game-header {
+        padding: 10px 12px;
+    }
+
+    .m-game-header-code {
+        font-size: 13px;
+    }
+
+    .m-game-header-roundnum {
+        font-size: 16px;
+    }
+
+    .m-game-header-treasurynum {
+        font-size: 12px;
+    }
+
+    .mobile-opponents {
+        padding: 8px 10px !important;
+        gap: 8px !important;
+    }
+
+    .mobile-opponent {
+        min-width: 124px !important;
+        padding: 8px 10px !important;
+    }
+
+    .mobile-bottom-bar {
+        padding: 10px 12px 14px !important;
+        padding-bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+    }
+
     .mobile-bottom-bar .card {
-        width: 78px !important;
-        height: 110px !important;
-        padding: 10px 4px 6px !important;
+        width: 84px !important;
+        height: 122px !important;
+        padding: 12px 5px 7px !important;
     }
 
     .mobile-bottom-bar .card-emoji {
@@ -1333,15 +1987,19 @@ input[type="text"]::placeholder {
     }
 
     .mobile-bottom-bar .card-type {
-        font-size: 10px !important;
-        letter-spacing: 0.06em;
+        font-size: 12px !important;
+        letter-spacing: 0.08em;
     }
 
-    .mobile-bottom-bar .actions-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .lobby-waiting h2 {
+        font-size: 44px !important;
     }
 
-    .mobile-bottom-bar .action-btn {
-        min-height: 50px !important;
+    .landing-page h1 {
+        font-size: 48px !important;
+    }
+
+    .panel-header h3 {
+        font-size: 20px !important;
     }
 }

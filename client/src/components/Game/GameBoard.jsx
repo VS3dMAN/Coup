@@ -7,7 +7,7 @@ import { ActionButtons } from './ActionButtons';
 import { ChallengePanel } from './ChallengePanel';
 import { GameLog } from './GameLog';
 import { ChatBox } from './ChatBox';
-import { Flourish, WaxSeal } from '../Common/Heraldry';
+import { Flourish, WaxSeal, Shield, Coin, Influence, CrownEmblem, shieldColorFor, initialsFor } from '../Common/Heraldry';
 import '../../styles/game.css';
 import '../../styles/theme.css';
 
@@ -52,7 +52,7 @@ export const GameBoard = () => {
     if (gameState === 'LOBBY') {
         return (
             <div className="lobby-waiting">
-                <h2>Room: {roomCode}</h2>
+                <h2 className="lobby-room-heading">{roomCode}</h2>
                 <div className="lobby-flourish"><Flourish width={240} /></div>
                 <p>Waiting for players... ({players.length}/6)</p>
                 <PlayerList />
@@ -95,8 +95,26 @@ export const GameBoard = () => {
     const currentPlayer = players.find(p => p.id === currentPlayerId);
     const isMyTurn = currentPlayerId === playerId;
 
+    // Derived header values (no server fields needed):
+    //   round    = number of completed actions + 1 (visible "round" counter)
+    //   treasury = 50 starting coins minus what players hold
+    const actionHistory = useGameStore.getState().actionHistory || [];
+    const round = Math.max(1, actionHistory.length + 1);
+    const heldCoins = players.reduce((s, p) => s + (p.coins || 0), 0);
+    const treasury = Math.max(0, 50 - heldCoins);
+
+    // Latest log entry — surfaced as a pill above the play surface on mobile.
+    const lastEntry = actionHistory[actionHistory.length - 1];
+    const lastEntryText = lastEntry
+        ? `${lastEntry.player} ${lastEntry.action?.toLowerCase().replace(/_/g, ' ') || 'acted'}${lastEntry.target ? ` → ${lastEntry.target}` : ''}`
+        : (currentPlayer ? `${isMyTurn ? 'Your' : `${currentPlayer.name}'s`} turn begins.` : 'Awaiting first move.');
+    const lastEntryKind = lastEntry?.action === 'CHALLENGE' || lastEntry?.action === 'CHALLENGE_BLOCK'
+        ? 'challenge'
+        : lastEntry?.action === 'BLOCK' ? 'block' : 'neutral';
+
     return (
         <div className="game-board">
+            {/* Desktop header — kept intact */}
             <div className="game-header">
                 <h2>COUP - Room: {roomCode}</h2>
                 {currentPlayer && (
@@ -105,6 +123,28 @@ export const GameBoard = () => {
                         {isMyTurn ? 'Your Turn' : `${currentPlayer.name}'s Turn`}
                     </span>
                 )}
+            </div>
+
+            {/* Mobile header — crown · room · round · treasury · log */}
+            <div className="m-game-header" aria-hidden={false}>
+                <div className="m-game-header-room">
+                    <span className="m-game-header-crown"><CrownEmblem size={26} /></span>
+                    <div>
+                        <div className="m-game-header-kicker">Room</div>
+                        <div className="m-game-header-code">{roomCode}</div>
+                    </div>
+                </div>
+                <div className="m-game-header-round">
+                    <div className="m-game-header-kicker">Round</div>
+                    <div className="m-game-header-roundnum">{round}</div>
+                </div>
+                <div className="m-game-header-treasury">
+                    <Coin size={14} />
+                    <div>
+                        <div className="m-game-header-kicker">Treasury</div>
+                        <div className="m-game-header-treasurynum">{treasury}</div>
+                    </div>
+                </div>
             </div>
 
             {isEliminated && (
@@ -120,17 +160,50 @@ export const GameBoard = () => {
                 </div>
             )}
 
-            {/* Mobile: horizontal opponent bar at top */}
+            {/* Mobile: rich opponent chip strip — shield · name · coins · mini cards · wax seal when current */}
             <div className="mobile-opponents">
-                {opponents.map(p => (
-                    <div key={p.id} className={`mobile-opponent ${!p.isAlive ? 'eliminated' : ''} ${p.id === useGameStore.getState().currentPlayerId ? 'active' : ''}`}>
-                        <span className="mobile-opponent-name">{p.name}</span>
-                        <span className="mobile-opponent-stats">
-                            {p.coins} / {p.influence}
-                        </span>
-                        {!p.isConnected && <span className="mobile-dc">DC</span>}
-                    </div>
-                ))}
+                {opponents.map(p => {
+                    const isCur = p.id === currentPlayerId;
+                    return (
+                        <div
+                            key={p.id}
+                            className={`mobile-opponent ${!p.isAlive ? 'eliminated' : ''} ${isCur ? 'active' : ''}`}
+                        >
+                            {isCur && (
+                                <span className="mobile-opponent-seal" aria-hidden>
+                                    <WaxSeal size={22} label="" />
+                                </span>
+                            )}
+                            <div className="mobile-opponent-top">
+                                <Shield color={shieldColorFor(p.id || p.name)} initials={initialsFor(p.name)} size={28} />
+                                <div className="mobile-opponent-meta">
+                                    <span className="mobile-opponent-name">{p.name}</span>
+                                    <span className="mobile-opponent-coins">
+                                        <Coin size={11} /> {p.coins}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="mobile-opponent-cards">
+                                {Array.from({ length: 2 }).map((_, i) => {
+                                    const card = p.cards?.[i];
+                                    const revealed = card?.revealed;
+                                    return (
+                                        <span key={i} className={`mobile-mini-card ${revealed ? 'revealed' : ''}`}>
+                                            {revealed ? card.type : ''}
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                            {!p.isConnected && <span className="mobile-dc">DC</span>}
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Mobile: latest-action pill */}
+            <div className={`m-latest m-latest-${lastEntryKind}`}>
+                <span className="m-latest-label">Latest</span>
+                <span className="m-latest-text">{lastEntryText}</span>
             </div>
 
             <div className="game-content">
@@ -147,8 +220,31 @@ export const GameBoard = () => {
                 </div>
             </div>
 
-            {/* Mobile: fixed bottom bar with hand + actions */}
+            {/* Mobile: fixed bottom dock — your seat strip + hand + actions */}
             <div className="mobile-bottom-bar">
+                {myPlayer && (
+                    <div className={`m-seat-strip ${isMyTurn ? 'active' : ''}`}>
+                        <Shield color={shieldColorFor(playerId || myPlayer.name)} initials={initialsFor(myPlayer.name)} size={32} />
+                        <div className="m-seat-meta">
+                            <span className="m-seat-name">
+                                {myPlayer.name}
+                                <span className="m-seat-you"> (You)</span>
+                            </span>
+                            <span className="m-seat-stats">
+                                <span className="m-seat-coins"><Coin size={13} /> {myPlayer.coins}</span>
+                                <span className="m-seat-influence">
+                                    {Array.from({ length: myPlayer.influence }).map((_, i) => (
+                                        <Influence key={`a${i}`} alive size={13} />
+                                    ))}
+                                    {Array.from({ length: 2 - myPlayer.influence }).map((_, i) => (
+                                        <Influence key={`d${i}`} alive={false} size={13} />
+                                    ))}
+                                </span>
+                            </span>
+                        </div>
+                        {isMyTurn && <span className="m-seat-seal" aria-hidden><WaxSeal size={28} label="★" /></span>}
+                    </div>
+                )}
                 {!isEliminated && <PlayerHand />}
                 <ActionButtons />
             </div>

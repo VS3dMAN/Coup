@@ -1,4 +1,4 @@
-import { ACTIONS, GAME_STATES } from './constants.js';
+import { ACTIONS, GAME_STATES, DECISION_TIMEOUT_MS } from './constants.js';
 
 export class ActionHandler {
     constructor(game) {
@@ -160,7 +160,7 @@ export class ActionHandler {
             success: true,
             message: `${player.name} taking Foreign Aid`,
             awaitingBlock: true,
-            timeout: 10000 // 10 second block window
+            timeout: DECISION_TIMEOUT_MS
         };
     }
 
@@ -207,7 +207,7 @@ export class ActionHandler {
             success: true,
             message: `${player.name} taking Tax (claiming Duke)`,
             awaitingChallenge: true,
-            timeout: 10000
+            timeout: DECISION_TIMEOUT_MS
         };
     }
 
@@ -294,7 +294,7 @@ export class ActionHandler {
             success: true,
             message: `${player.name} assassinating ${target.name}`,
             awaitingChallenge: true,
-            timeout: 10000
+            timeout: DECISION_TIMEOUT_MS
         };
     }
 
@@ -346,7 +346,7 @@ export class ActionHandler {
             success: true,
             message: `${player.name} stealing from ${target.name}`,
             awaitingChallenge: true,
-            timeout: 10000
+            timeout: DECISION_TIMEOUT_MS
         };
     }
 
@@ -396,7 +396,7 @@ export class ActionHandler {
             success: true,
             message: `${player.name} exchanging cards`,
             awaitingChallenge: true,
-            timeout: 10000
+            timeout: DECISION_TIMEOUT_MS
         };
     }
 
@@ -786,6 +786,11 @@ export class ActionHandler {
             return { success: false, message: 'Only target can block assassination' };
         }
 
+        // Special rule: only target can block Steal
+        if (action.type === ACTIONS.STEAL && blockerId !== action.targetPlayer) {
+            return { success: false, message: 'Only the target can block a steal' };
+        }
+
         // Set up challenge window for the block - reset pass tracking
         this.game.actionInProgress.passedPlayers = [];
         this.game.gameState = GAME_STATES.WAITING_BLOCK_CHALLENGE;
@@ -810,7 +815,7 @@ export class ActionHandler {
             awaitingBlockChallenge: true,
             blockingCharacter: blockingCharacter,
             blockerId: blockerId,
-            timeout: 10000
+            timeout: DECISION_TIMEOUT_MS
         };
     }
 
@@ -1027,7 +1032,11 @@ export class ActionHandler {
                 return alivePlayers.filter(pid => pid !== action.actingPlayer);
 
             case GAME_STATES.WAITING_BLOCK:
-                // Everyone except the acting player can block or pass
+                // Steal and Assassinate are target-only blocks, so only the target decides.
+                if (action.type === ACTIONS.STEAL || action.type === ACTIONS.ASSASSINATE) {
+                    return action.targetPlayer ? [action.targetPlayer] : [];
+                }
+                // Foreign Aid (Duke block) is open to all alive non-actors
                 return alivePlayers.filter(pid => pid !== action.actingPlayer);
 
             case GAME_STATES.WAITING_BLOCK_CHALLENGE:

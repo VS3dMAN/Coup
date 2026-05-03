@@ -2,6 +2,35 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { Flourish } from '../Common/Heraldry';
 
+// Timer indicator. Renders both a digit pill (.timer, shown on desktop)
+// and a circular SVG dial (.timer-dial, shown on mobile via CSS).
+// One source of truth for the value; CSS swaps which is visible.
+const TimerDisplay = ({ seconds, total = 30 }) => {
+    const urgent = seconds <= 10;
+    const size = 52;
+    const r = size / 2 - 4;
+    const c = 2 * Math.PI * r;
+    const pct = Math.max(0, Math.min(1, total > 0 ? seconds / total : 0));
+    return (
+        <>
+            <span className={urgent ? 'timer timer-urgent' : 'timer'}>{seconds}s</span>
+            <span className={`timer-dial ${urgent ? 'timer-urgent' : ''}`} aria-hidden>
+                <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                    <circle cx={size / 2} cy={size / 2} r={r} fill="var(--c-navyDeep)" stroke="var(--c-gold)" strokeWidth="1.5" />
+                    <circle
+                        cx={size / 2} cy={size / 2} r={r}
+                        fill="none" stroke="var(--c-goldBright)" strokeWidth="3"
+                        strokeDasharray={c} strokeDashoffset={c * (1 - pct)}
+                        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                        strokeLinecap="round"
+                    />
+                    <text x={size / 2} y={size / 2 + 5} textAnchor="middle" fontFamily="Cinzel, serif" fontWeight="700" fontSize={size * 0.32} fill="var(--c-goldBright)">{seconds}</text>
+                </svg>
+            </span>
+        </>
+    );
+};
+
 export const ChallengePanel = () => {
     const socket = useGameStore(state => state.socket);
     const gameId = useGameStore(state => state.gameId);
@@ -11,24 +40,32 @@ export const ChallengePanel = () => {
     const players = useGameStore(state => state.players);
     const myPlayer = useGameStore(state => state.getMyPlayer());
 
-    const [timer, setTimer] = useState(10);
+    const [timer, setTimer] = useState(0);
     const [selectedBlock, setSelectedBlock] = useState(null);
 
+    const decisionDeadline = actionInProgress?.decisionDeadline;
+
     useEffect(() => {
-        if (['WAITING_CHALLENGE', 'WAITING_BLOCK', 'WAITING_BLOCK_CHALLENGE'].includes(gameState)) {
-            setTimer(10);
-            const interval = setInterval(() => {
-                setTimer(prev => {
-                    if (prev <= 1) {
-                        clearInterval(interval);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
-            }, 1000);
-            return () => clearInterval(interval);
+        if (
+            !decisionDeadline ||
+            !['WAITING_CHALLENGE', 'WAITING_BLOCK', 'WAITING_BLOCK_CHALLENGE'].includes(gameState)
+        ) {
+            setTimer(0);
+            return;
         }
-    }, [gameState]);
+
+        const tick = () => {
+            const remaining = Math.max(0, Math.ceil((decisionDeadline - Date.now()) / 1000));
+            setTimer(remaining);
+            return remaining;
+        };
+
+        if (tick() === 0) return;
+        const interval = setInterval(() => {
+            if (tick() === 0) clearInterval(interval);
+        }, 250);
+        return () => clearInterval(interval);
+    }, [gameState, decisionDeadline]);
 
     useEffect(() => {
         setSelectedBlock(null);
@@ -48,7 +85,7 @@ export const ChallengePanel = () => {
             <div className="challenge-panel">
                 <div className="panel-header">
                     <h3>Challenge Window</h3>
-                    <span className="timer">{timer}s</span>
+                    <TimerDisplay seconds={timer} />
                 </div>
                 <div className="panel-flourish"><Flourish width={240} color="var(--c-accent)" /></div>
                 <p>
@@ -81,9 +118,11 @@ export const ChallengePanel = () => {
     // Block window
     if (gameState === 'WAITING_BLOCK') {
         const canBlock = actionInProgress.blockableBy && actionInProgress.blockableBy.length > 0;
-        const canIBlock = actionInProgress.type === 'ASSASSINATE' ?
-            playerId === actionInProgress.targetPlayer :
-            playerId !== actionInProgress.actingPlayer;
+        const isTargetOnlyBlock =
+            actionInProgress.type === 'ASSASSINATE' || actionInProgress.type === 'STEAL';
+        const canIBlock = isTargetOnlyBlock
+            ? playerId === actionInProgress.targetPlayer
+            : playerId !== actionInProgress.actingPlayer;
 
         if (!canBlock || !canIBlock) return null;
 
@@ -91,7 +130,7 @@ export const ChallengePanel = () => {
             <div className="challenge-panel block-variant">
                 <div className="panel-header">
                     <h3>Block Window</h3>
-                    <span className="timer">{timer}s</span>
+                    <TimerDisplay seconds={timer} />
                 </div>
                 <div className="panel-flourish"><Flourish width={240} color="var(--c-navy)" /></div>
                 <p>
@@ -153,7 +192,7 @@ export const ChallengePanel = () => {
             <div className="challenge-panel">
                 <div className="panel-header">
                     <h3>Challenge Block</h3>
-                    <span className="timer">{timer}s</span>
+                    <TimerDisplay seconds={timer} />
                 </div>
                 <div className="panel-flourish"><Flourish width={240} color="var(--c-accent)" /></div>
                 <p>

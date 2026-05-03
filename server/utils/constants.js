@@ -94,6 +94,9 @@ export const ACTION_CONFIG = {
   }
 };
 
+// Decision window (challenge / block / block-challenge) in milliseconds
+export const DECISION_TIMEOUT_MS = 45000;
+
 // Game configuration
 export const GAME_CONFIG = {
   MIN_PLAYERS: 2,
