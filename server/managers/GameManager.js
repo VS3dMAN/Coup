@@ -1,5 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Game } from '../models/Game.js';
+import { supabase } from '../db/supabase.js';
+import { clearLastActivity } from '../db/logger.js';
 
 export class GameManager {
     constructor() {
@@ -31,6 +33,13 @@ export class GameManager {
         this.games.set(game.gameId, game);
         this.roomCodes.set(roomCode, game.gameId);
 
+        if (supabase) {
+            supabase.from('games').insert({
+                id: game.gameId,
+                server_version: process.env.npm_package_version ?? '1.0.0'
+            }).then(({ error }) => { if (error) console.error('[db] games insert:', error.message); });
+        }
+
         return game;
     }
 
@@ -52,7 +61,18 @@ export class GameManager {
         if (game.status !== 'LOBBY') throw new Error('Game already started');
         if (game.players.length >= 6) throw new Error('Game is full');
 
-        return game.addPlayer(playerId, playerName, socketId);
+        const player = game.addPlayer(playerId, playerName, socketId);
+
+        if (supabase) {
+            supabase.from('players').insert({
+                game_id: game.gameId,
+                player_id: playerId,
+                name: playerName,
+                seat: game.players.length - 1
+            }).then(({ error }) => { if (error) console.error('[db] players insert:', error.message); });
+        }
+
+        return player;
     }
 
     // Remove player from game
@@ -103,6 +123,16 @@ export class GameManager {
                 }
                 this.roomCodes.delete(game.roomCode);
                 this.games.delete(gameId);
+                clearLastActivity(gameId);
+
+                if (supabase) {
+                    supabase.from('games').update({
+                        ended_at: new Date().toISOString(),
+                        end_reason: game.status === 'FINISHED' ? 'finished' : 'cleanup',
+                        player_count: game.players.length
+                    }).eq('id', gameId)
+                        .then(({ error }) => { if (error) console.error('[db] games update:', error.message); });
+                }
             }
         }
     }
