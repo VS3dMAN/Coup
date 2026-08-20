@@ -1,4 +1,5 @@
 import { useGameStore } from '../../store/gameStore';
+import { roleArt } from '../../utils/roleArt';
 
 export const PlayerHand = () => {
     const myPlayer = useGameStore(state => state.getMyPlayer());
@@ -22,7 +23,17 @@ export const PlayerHand = () => {
                         className={`card ${card.revealed ? 'revealed' : ''}`}
                     >
                         <div className="card-content">
-                            <span className="card-emoji">{card.revealed ? '💀' : '🎴'}</span>
+                            <span className="card-emoji">
+                                {roleArt(card.type)
+                                    ? <img
+                                        className="card-art"
+                                        src={roleArt(card.type)}
+                                        alt={card.type}
+                                        draggable="false"
+                                    />
+                                    : (card.revealed ? '\u{1F480}' : '\u{1F3B4}')}
+                                {card.revealed && <span className="card-fallen" aria-hidden>{'\u{1F480}'}</span>}
+                            </span>
                             <span className="card-type">{card.type}</span>
                         </div>
                     </div>

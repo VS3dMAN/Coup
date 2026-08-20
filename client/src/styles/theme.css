@@ -332,6 +332,12 @@ input[type="text"]::placeholder {
 /* ── Game board ───────────────────────────────────────────────── */
 .game-board {
     color: var(--c-parchment);
+    /* No parchment sheet behind the board — the dark court backdrop
+       from body/body::before shows through, matching the landing page. */
+    background: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
 .game-header {
@@ -390,11 +396,15 @@ input[type="text"]::placeholder {
     border-left: 3px solid var(--c-inkSoft);
     border-radius: 0;
     color: var(--c-ink);
-    padding: 12px 14px;
-    display: flex;
+    /* Three columns: shield | name+stats | held cards. Keeps the seat
+       one dense row instead of a wide band of empty parchment. */
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    column-gap: 14px;
+    row-gap: 0;
+    padding: 14px 16px;
+    margin-bottom: 10px;
 }
 
 .player-item.you {
@@ -417,17 +427,21 @@ input[type="text"]::placeholder {
 .player-info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    flex: 1;
+    gap: 6px;
     min-width: 0;
+    grid-column: 2;
 }
 
 .player-name {
     font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 14px;
+    font-weight: 700;
+    font-size: 17px;
+    line-height: 1.2;
     color: var(--c-ink);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .disconnected {
@@ -440,35 +454,110 @@ input[type="text"]::placeholder {
 .player-stats {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-family: var(--font-display);
-    font-size: 13px;
+    font-size: 18px;
     color: var(--c-inkSoft);
 }
 
-.player-stats .coins,
+/* Coin purse — a struck plaque so the count reads from across the room. */
+.player-stats .coins {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--c-ink);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--c-goldBright) 34%, var(--c-panel)) 0%, color-mix(in srgb, var(--c-gold) 26%, var(--c-parchmentDeep)) 100%);
+    border: 1px solid rgba(138, 104, 32, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 250, 235, 0.55);
+    padding: 5px 12px 5px 8px;
+    min-width: 62px;
+    justify-content: center;
+}
+
 .player-stats .influence {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid rgba(74, 56, 40, 0.22);
+    background: rgba(255, 255, 255, 0.35);
 }
 
 .player-cards {
     display: flex;
-    gap: 6px;
-    flex-basis: 100%;
-    margin-top: 4px;
+    gap: 8px;
+    grid-column: 3;
+    margin-top: 0;
+    justify-content: flex-end;
 }
 
+/* Held influence — face-down cards sized like real cards in hand,
+   not text chips, so the seat row carries visual weight. */
 .card-mini {
     font-family: var(--font-display);
-    font-size: 10px;
-    letter-spacing: 0.12em;
+    font-size: 11px;
+    line-height: 1.15;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    background: linear-gradient(145deg, var(--c-burgundy) 0%, var(--c-burgundyDeep) 80%);
+    text-align: center;
+    background:
+        repeating-linear-gradient(135deg, rgba(201, 162, 74, 0.14) 0 5px, transparent 5px 11px),
+        linear-gradient(145deg, var(--c-burgundy) 0%, var(--c-burgundyDeep) 80%);
     border: 1px solid var(--c-gold);
+    box-shadow: inset 0 0 0 2px rgba(201, 162, 74, 0.22), 0 4px 10px -6px rgba(0, 0, 0, 0.65);
     color: var(--c-goldBright);
-    padding: 4px 8px;
+    padding: 0;
+    width: 44px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.card-mini-art {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 18%;
+    filter: grayscale(0.55) brightness(0.85);
+}
+
+.card-mini-back {
+    font-size: 18px;
+    line-height: 1;
+    color: var(--c-gold);
+    opacity: 0.9;
+}
+
+.card-mini-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 2px 1px;
+    background: rgba(26, 16, 10, 0.82);
+    color: var(--c-goldBright);
+    font-size: 7px;
+    letter-spacing: 0.04em;
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+/* Revealed influence — face-up and spent: pale, no longer a threat. */
+.card-mini.revealed {
+    background: linear-gradient(145deg, var(--c-stone) 0%, var(--c-parchmentDeep) 100%);
+    border-color: rgba(138, 104, 32, 0.5);
+    color: var(--c-inkSoft);
+    box-shadow: none;
+    opacity: 0.85;
 }
 
 /* ── Player hand ──────────────────────────────────────────────── */
@@ -534,17 +623,52 @@ input[type="text"]::placeholder {
     margin-top: 10px;
 }
 
+/* Art window on a role card. Holds the painted portrait; falls back to the
+   weave-and-emoji placeholder when a card type has no artwork. */
 .card-emoji {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 80%;
     flex: 1;
     min-height: 0;
-    background: repeating-linear-gradient(135deg, rgba(90, 20, 24, 0.08) 0 6px, transparent 6px 14px);
-    border: 1px dashed rgba(74, 56, 40, 0.35);
+    overflow: hidden;
+    background:
+        repeating-linear-gradient(135deg, rgba(90, 20, 24, 0.08) 0 6px, transparent 6px 14px),
+        var(--c-ink);
+    border: 1px solid rgba(74, 56, 40, 0.45);
+    box-shadow: inset 0 0 0 1px rgba(201, 162, 74, 0.28);
     font-size: 28px;
-    filter: grayscale(0.4);
+}
+
+.card-art {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    /* The paintings are 3:4 and the window is close to it — cover trims the
+       little that differs. Bias upward so the face, not the chest, is kept. */
+    object-fit: cover;
+    object-position: center 20%;
+    user-select: none;
+}
+
+/* Skull struck over a lost influence. */
+.card-fallen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    background: rgba(26, 16, 10, 0.45);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.card.revealed .card-art {
+    filter: grayscale(0.75) brightness(0.7);
 }
 
 .card-type {
@@ -819,6 +943,26 @@ input[type="text"]::placeholder {
     background: linear-gradient(180deg, var(--c-burgundy) 0%, var(--c-burgundyDeep) 100%) !important;
     color: var(--c-goldBright) !important;
     text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+.reveal-card-btn,
+.exchange-card-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.role-btn-art {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border: 1px solid var(--c-gold);
+    flex-shrink: 0;
+}
+
+.role-btn-label {
+    line-height: 1;
 }
 
 /* ── Game log ─────────────────────────────────────────────────── */
@@ -1334,7 +1478,33 @@ input[type="text"]::placeholder {
         background: linear-gradient(160deg, var(--c-parchmentDeep) 0%, var(--c-stone) 100%);
         color: var(--c-inkSoft);
         border-color: rgba(74, 56, 40, 0.4);
-        text-decoration: line-through;
+        position: relative;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    .mobile-mini-card-art {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center 18%;
+        filter: grayscale(0.55) brightness(0.85);
+    }
+
+    .mobile-mini-card-label {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 1px 1px;
+        background: rgba(26, 16, 10, 0.82);
+        color: var(--c-goldBright);
+        font-size: 6px;
+        letter-spacing: 0;
+        line-height: 1.1;
+        overflow: hidden;
     }
 
     .mobile-dc {

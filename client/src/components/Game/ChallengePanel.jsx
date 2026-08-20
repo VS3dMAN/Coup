@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { Flourish } from '../Common/Heraldry';
+import { roleIcon } from '../../utils/roleArt';
 
 // Timer indicator. Renders both a digit pill (.timer, shown on desktop)
 // and a circular SVG dial (.timer-dial, shown on mobile via CSS).
@@ -240,7 +241,10 @@ export const ChallengePanel = () => {
                                 onClick={() => handleRevealCard(idx)}
                                 className="reveal-card-btn"
                             >
-                                Reveal {card.type}
+                                {roleIcon(card.type) && (
+                                    <img className="role-btn-art" src={roleIcon(card.type)} alt="" draggable="false" />
+                                )}
+                                <span className="role-btn-label">Reveal {card.type}</span>
                             </button>
                         )
                     ))}
@@ -349,7 +353,10 @@ function ExchangeCardSelection() {
                         className={`exchange-card-btn ${selectedIndices.includes(idx) ? 'selected' : ''
                             }`}
                     >
-                        {card}
+                        {roleIcon(card) && (
+                            <img className="role-btn-art" src={roleIcon(card)} alt="" draggable="false" />
+                        )}
+                        <span className="role-btn-label">{card}</span>
                     </button>
                 ))}
             </div>

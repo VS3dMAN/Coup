@@ -1,5 +1,6 @@
 import { useGameStore } from '../../store/gameStore';
 import { Shield, Coin, Influence, Flourish, shieldColorFor, initialsFor } from '../Common/Heraldry';
+import { roleIcon } from '../../utils/roleArt';
 
 export const PlayerList = () => {
     const players = useGameStore(state => state.players);
@@ -19,7 +20,7 @@ export const PlayerList = () => {
                         } ${!player.isAlive ? 'eliminated' : ''} ${player.id === playerId ? 'you' : ''
                         }`}
                 >
-                    <Shield color={shieldColorFor(player.id || player.name)} initials={initialsFor(player.name)} size={36} />
+                    <Shield color={shieldColorFor(player.id || player.name)} initials={initialsFor(player.name)} size={46} />
                     <div className="player-info">
                         <span className="player-name">
                             {player.name}
@@ -28,13 +29,13 @@ export const PlayerList = () => {
                         </span>
                         {!player.isConnected && <span className="disconnected"> [DC]</span>}
                         <div className="player-stats">
-                            <span className="coins"><Coin size={14} /> {player.coins}</span>
+                            <span className="coins"><Coin size={22} /> {player.coins}</span>
                             <span className="influence">
                                 {Array.from({ length: player.influence }).map((_, i) => (
-                                    <Influence key={`a${i}`} alive size={14} />
+                                    <Influence key={`a${i}`} alive size={22} />
                                 ))}
                                 {Array.from({ length: 2 - player.influence }).map((_, i) => (
-                                    <Influence key={`d${i}`} alive={false} size={14} />
+                                    <Influence key={`d${i}`} alive={false} size={22} />
                                 ))}
                             </span>
                         </div>
@@ -42,8 +43,22 @@ export const PlayerList = () => {
                     {player.cards && (
                         <div className="player-cards">
                             {player.cards.map((card, idx) => (
-                                <span key={idx} className="card-mini">
-                                    {card.revealed ? card.type : '◆'}
+                                <span key={idx} className={`card-mini ${card.revealed ? 'revealed' : ''}`}>
+                                    {card.revealed
+                                        ? (
+                                            <>
+                                                {roleIcon(card.type) && (
+                                                    <img
+                                                        className="card-mini-art"
+                                                        src={roleIcon(card.type)}
+                                                        alt=""
+                                                        draggable="false"
+                                                    />
+                                                )}
+                                                <span className="card-mini-label">{card.type}</span>
+                                            </>
+                                        )
+                                        : <span className="card-mini-back">◆</span>}
                                 </span>
                             ))}
                         </div>

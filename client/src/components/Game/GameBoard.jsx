@@ -8,6 +8,7 @@ import { ChallengePanel } from './ChallengePanel';
 import { GameLog } from './GameLog';
 import { ChatBox } from './ChatBox';
 import { Flourish, WaxSeal, Shield, Coin, Influence, CrownEmblem, shieldColorFor, initialsFor } from '../Common/Heraldry';
+import { roleIcon } from '../../utils/roleArt';
 import '../../styles/game.css';
 import '../../styles/theme.css';
 
@@ -189,7 +190,15 @@ export const GameBoard = () => {
                                     const revealed = card?.revealed;
                                     return (
                                         <span key={i} className={`mobile-mini-card ${revealed ? 'revealed' : ''}`}>
-                                            {revealed ? card.type : ''}
+                                            {revealed && roleIcon(card.type) && (
+                                                <img
+                                                    className="mobile-mini-card-art"
+                                                    src={roleIcon(card.type)}
+                                                    alt=""
+                                                    draggable="false"
+                                                />
+                                            )}
+                                            {revealed ? <span className="mobile-mini-card-label">{card.type}</span> : ''}
                                         </span>
                                     );
                                 })}
