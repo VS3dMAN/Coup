@@ -1,4 +1,6 @@
-CLIENT_URL=https://coup-fe.onrender.com
-CORS_ORIGIN=https://coup-fe.onrender.com
+# CLIENT_URL must be the URL where the frontend is currently hosted (comma-separated if several).
+# The old value (https://coup-fe.onrender.com) is a dead service - replace with the live frontend URL.
+CLIENT_URL=<current-frontend-url>
 NODE_ENV=production
 PORT=10000
+# Note: CORS_ORIGIN was removed - server.js never reads it (only CLIENT_URL is used for CORS).

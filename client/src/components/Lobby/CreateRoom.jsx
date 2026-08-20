@@ -20,7 +20,7 @@ export const CreateRoom = () => {
         }
 
         if (!socket) {
-            setError('Not connected to server');
+            setError('Still connecting to the server - this can take up to a minute if it has been idle. Please try again shortly.');
             return;
         }
 

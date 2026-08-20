@@ -14,11 +14,17 @@ export const useSocket = () => {
 
     useEffect(() => {
         // Create socket connection
+        // The backend is on Render's free plan, which spins down after inactivity.
+        // A cold start can take ~50s+, so give each attempt room to outlast it and
+        // never stop retrying - otherwise the client gives up permanently and the
+        // user is stuck on "not connected" until they reload the page.
         const newSocket = io(SOCKET_URL, {
             autoConnect: true,
             reconnection: true,
             reconnectionDelay: 1000,
-            reconnectionAttempts: 5
+            reconnectionDelayMax: 10000,
+            reconnectionAttempts: Infinity,
+            timeout: 60000
         });
 
         // Connection event handlers

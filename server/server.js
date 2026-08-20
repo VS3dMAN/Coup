@@ -13,7 +13,22 @@ const app = express();
 const httpServer = createServer(app);
 const allowedOrigins = ['http://localhost:3000'];
 if (process.env.CLIENT_URL) {
-    process.env.CLIENT_URL.split(',').forEach(url => allowedOrigins.push(url.trim()));
+    process.env.CLIENT_URL.split(',')
+        .map(url => url.trim())
+        .filter(url => {
+            // Guard against the placeholder from Extras/Backend-env-variables.txt
+            // being pasted into Render verbatim.
+            if (!/^https?:\/\//.test(url)) {
+                console.warn(`Ignoring invalid CLIENT_URL entry: "${url}"`);
+                return false;
+            }
+            return true;
+        })
+        .forEach(url => allowedOrigins.push(url));
+}
+console.log('CORS allowed origins:', allowedOrigins.join(', '));
+if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 1) {
+    console.warn('CLIENT_URL is unset or invalid - only localhost is allowed, so the deployed frontend will fail to connect.');
 }
 
 const io = new Server(httpServer, {
